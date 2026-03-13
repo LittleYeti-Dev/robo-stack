@@ -1,0 +1,73 @@
+version: 2
+updates:
+  # GitHub Actions dependencies
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "@devops"
+    commit-message:
+      prefix: "chore(deps):"
+      include: "scope"
+    groups:
+      minor-patch:
+        dependency-type: "non-major"
+
+  # Docker image updates
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "@devops"
+    commit-message:
+      prefix: "chore(docker):"
+      include: "scope"
+    groups:
+      minor-patch:
+        dependency-type: "non-major"
+
+  # npm dependencies
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "@backend"
+    commit-message:
+      prefix: "chore(npm):"
+      include: "scope"
+    groups:
+      dev-dependencies:
+        dependency-type: "dev"
+        patterns:
+          - "*"
+      minor-patch:
+        dependency-type: "non-major"
+
+  # pip dependencies (Python)
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "@backend"
+    commit-message:
+      prefix: "chore(pip):"
+      include: "scope"
+    groups:
+      minor-patch:
+        dependency-type: "non-major"

@@ -3,90 +3,833 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robo Stack — Hybrid AI Development Stack</title>
+    <title>Robo Stack - Hybrid AI Development Architecture</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; }
-        .hero { max-width: 900px; margin: 0 auto; padding: 60px 20px; }
-        h1 { font-size: 2.5em; color: #58a6ff; margin-bottom: 10px; }
-        .subtitle { font-size: 1.2em; color: #8b949e; margin-bottom: 40px; }
-        .badge { display: inline-block; background: #1f6feb33; color: #58a6ff; padding: 4px 12px; border-radius: 20px; font-size: 0.85em; margin-bottom: 30px; }
-        .section { margin-bottom: 40px; }
-        h2 { font-size: 1.4em; color: #f0f6fc; margin-bottom: 15px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
-        .architecture { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; font-family: monospace; font-size: 0.95em; line-height: 2; }
-        .architecture .layer { color: #58a6ff; }
-        .architecture .arrow { color: #484f58; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
-        .card h3 { color: #58a6ff; font-size: 1em; margin-bottom: 8px; }
-        .card p { color: #8b949e; font-size: 0.9em; }
-        .status { margin-top: 40px; padding: 20px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
-        .status-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #21262d; }
-        .status-item:last-child { border-bottom: none; }
-        .tag { font-size: 0.8em; padding: 2px 8px; border-radius: 12px; }
-        .tag-active { background: #238636; color: #fff; }
-        .tag-pending { background: #9e6a03; color: #fff; }
-        .tag-dormant { background: #484f58; color: #c9d1d9; }
-        footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #21262d; color: #484f58; font-size: 0.85em; }
-        a { color: #58a6ff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --accent-alt: #79c0ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --pending: #6e40aa;
+            --border: #30363d;
+            --shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+            scroll-behavior: smooth;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .hero {
+            padding: 4rem 2rem;
+            text-align: center;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+            margin: 0.5rem 0.25rem;
+            font-weight: 600;
+        }
+
+        .badge-yk {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .badge-active {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin: 1rem 0 2rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-num {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        section {
+            padding: 4rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        .architecture {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            overflow-x: auto;
+        }
+
+        .arch-diagram {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            min-width: 600px;
+        }
+
+        .cloud-box {
+            background: var(--bg-tertiary);
+            border: 2px solid var(--accent);
+            border-radius: 10px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .cloud-box::before {
+            content: 'AWS Cloud (VPC 10.0.0.0/16)';
+            position: absolute;
+            top: -12px;
+            left: 1rem;
+            background: var(--bg-primary);
+            padding: 0 0.5rem;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .ec2-box {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-alt);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .ec2-box::before {
+            content: 'EC2 Dev Workstation (t3.xlarge)';
+            display: block;
+            font-size: 0.85rem;
+            color: var(--accent-alt);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .component {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.8rem;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s;
+        }
+
+        .component:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .support-boxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .card h3 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        .status-building {
+            background: rgba(217, 119, 6, 0.2);
+            color: #d77f06;
+        }
+
+        .status-configured {
+            background: rgba(88, 166, 255, 0.2);
+            color: var(--accent);
+        }
+
+        .status-active {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--success);
+        }
+
+        .progress-container {
+            margin: 1rem 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success) 0%, var(--accent) 100%);
+            transition: width 0.5s ease;
+        }
+
+        .stories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .story {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--border);
+            padding: 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .story.complete {
+            border-left-color: var(--success);
+        }
+
+        .story.building {
+            border-left-color: var(--warning);
+        }
+
+        .story.pending {
+            border-left-color: var(--pending);
+        }
+
+        .story-id {
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .story-status {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            background: var(--bg-secondary);
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .tech-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .tech-item:hover {
+            border-color: var(--accent);
+            background: rgba(88, 166, 255, 0.05);
+        }
+
+        .tech-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tech-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        thead {
+            background: var(--bg-tertiary);
+        }
+
+        th {
+            padding: 1rem;
+            text-align: left;
+            color: var(--accent);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .link-category h3 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .link-category a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+            transition: color 0.3s;
+        }
+
+        .link-category a:hover {
+            color: var(--accent);
+        }
+
+        footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .footer-content {
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+
+            .card-grid, .tech-grid {
+                grid-template-columns: 1fr;
+            }
+
+            nav {
+                gap: 1rem;
+            }
+
+            section {
+                padding: 2rem 1rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <span class="badge">Yeti Knowledge Systems</span>
-        <h1>Robo Stack</h1>
-        <p class="subtitle">Hybrid AI Development Stack — A cybersecurity-hardened development platform leveraging multiple AI coding agents for accelerated workflows.</p>
+    <header>
+        <nav>
+            <a href="#architecture" style="font-weight: 600; color: var(--accent);">Robo Stack</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#layers">Layers</a>
+            <a href="#progress">Progress</a>
+            <a href="#tech">Tech Stack</a>
+            <a href="#costs">Costs</a>
+            <a href="#resources">Resources</a>
+        </nav>
+    </header>
 
-        <div class="section">
-            <h2>Architecture</h2>
+    <section class="hero">
+        <div class="container">
+            <h1>Robo Stack</h1>
+            <p>Hybrid AI Development Stack</p>
+            <div>
+                <span class="badge badge-yk">YKS</span>
+                <span class="badge badge-active">Sprint 1 — Active</span>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-num">8</div>
+                    <div class="stat-label">Sprint 1 Stories</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num">3</div>
+                    <div class="stat-label">Personas Active</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num">2</div>
+                    <div class="stat-label">AI Agents</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-num">4</div>
+                    <div class="stat-label">Dev Environments</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="architecture">
+        <div class="container">
+            <h2>System Architecture</h2>
             <div class="architecture">
-                <span class="layer">Developer Workstation</span> <span class="arrow">→</span>
-                <span class="layer">Local AI Coding Agents</span> <span class="arrow">→</span>
-                <span class="layer">Git Repository</span> <span class="arrow">→</span>
-                <span class="layer">CI/CD Pipeline</span> <span class="arrow">→</span>
-                <span class="layer">Cloud Infrastructure (AWS)</span> <span class="arrow">→</span>
-                <span class="layer">Client Application</span>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Core Layers</h2>
-            <div class="grid">
-                <div class="card">
-                    <h3>Local Development</h3>
-                    <p>Ubuntu workstation with Kubernetes (K3s/Minikube) for container orchestration.</p>
-                </div>
-                <div class="card">
-                    <h3>AI Agent Layer</h3>
-                    <p>Copilot, CodeWhisperer, JetBrains AI, TabbyML, OpenDevin — multi-agent coding assistance.</p>
-                </div>
-                <div class="card">
-                    <h3>Cloud Infrastructure</h3>
-                    <p>AWS EC2 compute, VPC networking, optional EKS cluster. All managed via Terraform IaC.</p>
-                </div>
-                <div class="card">
-                    <h3>Security</h3>
-                    <p>Least-privilege IAM, encrypted APIs, private VPC, dependency scanning, centralized monitoring.</p>
+                <div class="arch-diagram">
+                    <div class="cloud-box">
+                        <div class="ec2-box">
+                            <div class="components">
+                                <div class="component">🐳 Docker</div>
+                                <div class="component">☸️ K3s</div>
+                                <div class="component">🤖 AI Agents</div>
+                            </div>
+                            <div class="support-boxes" style="margin-top: 1rem;">
+                                <div class="component">IAM Roles</div>
+                                <div class="component">Security Groups</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                        <div style="background: var(--bg-tertiary); border: 2px solid var(--accent-alt); border-radius: 8px; padding: 1rem; text-align: center;">
+                            <div style="font-weight: 600; color: var(--accent-alt); margin-bottom: 0.5rem;">GitHub Actions</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">CI/CD Pipeline</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); border: 2px solid var(--accent-alt); border-radius: 8px; padding: 1rem; text-align: center;">
+                            <div style="font-weight: 600; color: var(--accent-alt); margin-bottom: 0.5rem;">GitHub Repo</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">Source Control</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        <div class="section">
-            <h2>Development Roadmap</h2>
-            <div class="status">
-                <div class="status-item"><span>Phase 0 — Concept Validation & RFI</span> <span class="tag tag-active">Complete</span></div>
-                <div class="status-item"><span>Sprint 0 — Platform & Tooling Setup</span> <span class="tag tag-active">In Progress</span></div>
-                <div class="status-item"><span>Phase 1 — Prototype Hybrid Stack</span> <span class="tag tag-pending">Upcoming</span></div>
-                <div class="status-item"><span>Phase 2 — Internal Testing</span> <span class="tag tag-dormant">Planned</span></div>
-                <div class="status-item"><span>Phase 3 — Architecture Demos & Portfolio</span> <span class="tag tag-dormant">Planned</span></div>
-                <div class="status-item"><span>Phase 4 — Consulting Launch</span> <span class="tag tag-dormant">Planned</span></div>
+    <section id="layers">
+        <div class="container">
+            <h2>Infrastructure Layers</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h3>☁️ AWS Cloud</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">VPC, EC2, IAM, Security Groups</p>
+                    <span class="status status-building">Building</span>
+                </div>
+                <div class="card">
+                    <h3>🐳 Container Runtime</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Docker CE</p>
+                    <span class="status status-building">Building</span>
+                </div>
+                <div class="card">
+                    <h3>☸️ Kubernetes</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">K3s on EC2 (dev|stg|mon)</p>
+                    <span class="status status-building">Building</span>
+                </div>
+                <div class="card">
+                    <h3>🔄 CI/CD</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">GitHub Actions</p>
+                    <span class="status status-configured">Configured</span>
+                </div>
+                <div class="card">
+                    <h3>🔒 Security</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Dependabot, CodeQL, Trivy, gitleaks</p>
+                    <span class="status status-configured">Configured</span>
+                </div>
+                <div class="card">
+                    <h3>🤖 AI Agents</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Copilot + Claude</p>
+                    <span class="status status-active">Active</span>
+                </div>
             </div>
         </div>
+    </section>
 
-        <footer>
-            <p>Yeti Knowledge Systems &middot; <a href="https://github.com/LittleYeti-Dev/robo-stack">GitHub Repository</a> &middot; <a href="https://github.com/LittleYeti-Dev/the-markdown">The Markdown</a> &middot; <a href="https://github.com/LittleYeti-Dev/content-ops">Content Ops</a></p>
-        </footer>
-    </div>
+    <section id="progress">
+        <div class="container">
+            <h2>Sprint 1 Progress</h2>
+            <div class="progress-container">
+                <div class="progress-label">
+                    <span>Overall Completion</span>
+                    <span>62.5%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 62.5%;"></div>
+                </div>
+            </div>
+            <div class="stories" style="margin-top: 2rem;">
+                <div class="story complete">
+                    <div class="story-id">S1.1</div>
+                    <div>Process Design</div>
+                    <span class="story-status">✅ Complete</span>
+                </div>
+                <div class="story complete">
+                    <div class="story-id">EV1.1</div>
+                    <div>K3s vs Minikube</div>
+                    <span class="story-status">✅ Complete</span>
+                </div>
+                <div class="story complete">
+                    <div class="story-id">S1.2</div>
+                    <div>Workstation Setup</div>
+                    <span class="story-status">✅ Complete</span>
+                </div>
+                <div class="story building">
+                    <div class="story-id">S1.3</div>
+                    <div>Local → AWS K3s</div>
+                    <span class="story-status">🔨 Building</span>
+                </div>
+                <div class="story complete">
+                    <div class="story-id">S1.4</div>
+                    <div>CI/CD Pipeline</div>
+                    <span class="story-status">✅ Complete</span>
+                </div>
+                <div class="story complete">
+                    <div class="story-id">S1.5</div>
+                    <div>Security Baseline</div>
+                    <span class="story-status">✅ Complete</span>
+                </div>
+                <div class="story pending">
+                    <div class="story-id">S1.6</div>
+                    <div>Copilot Agent Test</div>
+                    <span class="story-status">⏳ Pending</span>
+                </div>
+                <div class="story pending">
+                    <div class="story-id">TP1</div>
+                    <div>Sprint Touchpoint</div>
+                    <span class="story-status">⏳ Pending</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tech">
+        <div class="container">
+            <h2>Technology Stack</h2>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-icon">🐧</div>
+                    <div class="tech-name">Ubuntu 22.04</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🐳</div>
+                    <div class="tech-name">Docker</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">☸️</div>
+                    <div class="tech-name">K3s</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">⎈</div>
+                    <div class="tech-name">Helm</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🏗️</div>
+                    <div class="tech-name">Terraform</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🔄</div>
+                    <div class="tech-name">GitHub Actions</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🤖</div>
+                    <div class="tech-name">GitHub Copilot</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🧠</div>
+                    <div class="tech-name">Claude Code</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🔐</div>
+                    <div class="tech-name">CodeQL</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">🛡️</div>
+                    <div class="tech-name">Trivy</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">👁️</div>
+                    <div class="tech-name">gitleaks</div>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-icon">☁️</div>
+                    <div class="tech-name">AWS EC2</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="costs">
+        <div class="container">
+            <h2>Financial Model</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Min/Month</th>
+                        <th>Max/Month</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>AI Development Tools</td>
+                        <td>$20</td>
+                        <td>$80</td>
+                        <td>Copilot Pro, Claude subscriptions</td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Infrastructure</td>
+                        <td>$40</td>
+                        <td>$160</td>
+                        <td>EC2 compute, VPC, NAT gateway</td>
+                    </tr>
+                    <tr>
+                        <td>Storage & Networking</td>
+                        <td>$10</td>
+                        <td>$30</td>
+                        <td>EBS volumes, data transfer</td>
+                    </tr>
+                    <tr>
+                        <td>Monitoring & Security</td>
+                        <td>$10</td>
+                        <td>$40</td>
+                        <td>CloudWatch, security tools</td>
+                    </tr>
+                    <tr style="background: var(--bg-tertiary); font-weight: 600;">
+                        <td>Total Monthly</td>
+                        <td>$80</td>
+                        <td>$310</td>
+                        <td>Scalable with project growth</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <h2>DevOps Standards</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Standard</th>
+                        <th>Implementation</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Infrastructure as Code</td>
+                        <td>Terraform for AWS provisioning</td>
+                        <td>✅ Active</td>
+                    </tr>
+                    <tr>
+                        <td>Container Security</td>
+                        <td>Trivy scanning on all images</td>
+                        <td>✅ Active</td>
+                    </tr>
+                    <tr>
+                        <td>Secret Management</td>
+                        <td>GitHub Secrets, no hardcoding</td>
+                        <td>✅ Active</td>
+                    </tr>
+                    <tr>
+                        <td>Dependency Scanning</td>
+                        <td>Dependabot for updates</td>
+                        <td>✅ Active</td>
+                    </tr>
+                    <tr>
+                        <td>Code Quality</td>
+                        <td>CodeQL analysis in CI/CD</td>
+                        <td>✅ Active</td>
+                    </tr>
+                    <tr>
+                        <td>Access Control</td>
+                        <td>IAM least privilege, RBAC in K3s</td>
+                        <td>✅ Active</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="resources">
+        <div class="container">
+            <h2>Links & Resources</h2>
+            <div class="links-grid">
+                <div class="link-category">
+                    <h3>GitHub Repositories</h3>
+                    <a href="https://github.com/yeti-knowledge-systems/robo-stack" target="_blank">robo-stack</a>
+                    <a href="https://github.com/yeti-knowledge-systems/content-ops" target="_blank">content-ops</a>
+                    <a href="https://github.com/yeti-knowledge-systems/the-markdown" target="_blank">the-markdown</a>
+                </div>
+                <div class="link-category">
+                    <h3>Project Management</h3>
+                    <a href="https://github.com/orgs/yeti-knowledge-systems/projects" target="_blank">Project Board</a>
+                    <a href="https://github.com/yeti-knowledge-systems/robo-stack/wiki" target="_blank">Wiki</a>
+                    <a href="https://github.com/yeti-knowledge-systems/robo-stack/issues" target="_blank">Issues</a>
+                </div>
+                <div class="link-category">
+                    <h3>Documentation</h3>
+                    <a href="https://github.com/yeti-knowledge-systems/robo-stack/blob/main/README.md" target="_blank">README</a>
+                    <a href="https://github.com/yeti-knowledge-systems/robo-stack/tree/main/docs" target="_blank">Docs</a>
+                    <a href="https://github.com/yeti-knowledge-systems/robo-stack/blob/main/ARCHITECTURE.md" target="_blank">Architecture</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <strong>Yeti Knowledge Systems</strong> | Robo Stack Project
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            Last updated: March 13, 2026 | Sprint 1 Active
+        </div>
+    </footer>
 </body>
 </html>

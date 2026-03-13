@@ -1,0 +1,203 @@
+# ============================================================================
+# ENVIRONMENT & SECRETS
+# ============================================================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.staging
+.env.production
+
+# ============================================================================
+# CREDENTIALS & KEYS
+# ============================================================================
+*.key
+*.pem
+*.p8
+*.p12
+*.pfx
+*.jks
+credentials.*
+secrets.*
+*.keystore
+.ssh/
+.aws/credentials
+.aws/config
+
+# ============================================================================
+# NODE.JS / NPM
+# ============================================================================
+node_modules/
+npm-debug.log
+npm-debug.log.*
+yarn-debug.log.*
+yarn-error.log.*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-debug.log
+
+# ============================================================================
+# PYTHON
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv/
+venv/
+ENV/
+env/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# ============================================================================
+# TERRAFORM
+# ============================================================================
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.*
+*.tfvars
+!*.tfvars.example
+!*.tfvars.example.json
+*.tfvars.json
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform/deployment-info.txt
+terraform/tfplan*
+
+# ============================================================================
+# DOCKER
+# ============================================================================
+.dockerignore
+Dockerfile.dev
+docker-compose.override.yml
+.docker/
+
+# ============================================================================
+# IDE & EDITOR
+# ============================================================================
+.vscode/
+.idea/
+.editorconfig
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+.project
+.classpath
+.c9/
+.netrc
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ============================================================================
+# OS & SYSTEM
+# ============================================================================
+Thumbs.db
+.DS_Store
+.DS_Store?
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# ============================================================================
+# LOGS & TEMPORARY FILES
+# ============================================================================
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.lerna-debug.log
+debug.log
+*.out
+tmp/
+temp/
+*.tmp
+
+# ============================================================================
+# BUILD OUTPUTS
+# ============================================================================
+dist/
+build/
+out/
+*.bundle.js
+*.min.js
+*.min.css
+
+# ============================================================================
+# COVERAGE & TEST REPORTS
+# ============================================================================
+coverage/
+.nyc_output/
+*.lcov
+reports/
+junit.xml
+
+# ============================================================================
+# GENERATED FILES
+# ============================================================================
+.generated/
+.generated-*
+*.generated.js
+*.generated.py
+
+# ============================================================================
+# DEPENDENCY SECURITY REPORTS
+# ============================================================================
+sbom-*.json
+sbom-*.xml
+trivy-results.*
+gitleaks-report.*
+npm-audit.json
+
+# ============================================================================
+# CI/CD ARTIFACTS
+# ============================================================================
+.github/workflows/temp-*
+.github/cache/
+artifac*/
+
+# ============================================================================
+# LOCAL DEVELOPMENT
+# ============================================================================
+.vscode-server/
+.code-server/
+.devcontainer/.env
+.devcontainer/.env.local

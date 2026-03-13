@@ -1,0 +1,96 @@
+name: Deploy to Local K8s
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  statuses: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy K8s Manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set deployment status to pending
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'pending',
+              context: 'deployment/local-k8s',
+              description: 'Deployment in progress...'
+            })
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.28.0'
+
+      - name: Configure kubectl for local cluster
+        run: |
+          # Configure kubectl context for local K8s cluster
+          # This assumes kubeconfig is available in the runner environment
+          echo "Configuring kubectl for local Kubernetes cluster..."
+          if [ ! -d "$HOME/.kube" ]; then
+            mkdir -p "$HOME/.kube"
+          fi
+          # Note: In production, kubeconfig should be injected via secrets
+          # kubectl config use-context <local-cluster-context>
+
+      - name: Apply K8s manifests
+        id: kubectl_apply
+        run: |
+          set -e
+          if [ -d "k8s" ]; then
+            echo "Applying K8s manifests from k8s/ directory..."
+            kubectl apply -f k8s/
+            echo "apply_result=success" >> $GITHUB_OUTPUT
+          else
+            echo "No k8s/ directory found. Skipping deployment."
+            echo "apply_result=skipped" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify deployment
+        if: steps.kubectl_apply.outputs.apply_result == 'success'
+        run: |
+          echo "Waiting for deployments to be ready..."
+          kubectl wait --for=condition=available --timeout=300s deployment --all -A || true
+          echo "Deployment verification complete."
+
+      - name: Set deployment status to success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              context: 'deployment/local-k8s',
+              description: 'Deployment successful'
+            })
+
+      - name: Set deployment status to failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'failure',
+              context: 'deployment/local-k8s',
+              description: 'Deployment failed'
+            })

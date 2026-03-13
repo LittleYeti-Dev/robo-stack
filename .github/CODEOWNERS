@@ -1,0 +1,18 @@
+# Robo Stack CODEOWNERS Configuration
+# This file defines code ownership and required reviewers for pull requests
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Scripts and automation
+/scripts/                    @LittleYeti-Dev
+
+# Kubernetes manifests
+/k8s/                        @LittleYeti-Dev
+
+# GitHub workflows and CI/CD configuration
+/.github/                    @LittleYeti-Dev
+
+# Documentation
+/docs/                       @LittleYeti-Dev
+
+# Default owner for all other files
+# *                          @LittleYeti-Dev

@@ -1,0 +1,48 @@
+# Example Terraform variables file
+# IMPORTANT: Make a copy as terraform.tfvars and fill in YOUR values
+# DO NOT commit terraform.tfvars to version control
+
+# AWS region where infrastructure will be deployed
+# Available regions: us-east-1, us-west-2, eu-west-1, ap-southeast-1, etc.
+aws_region = "us-east-1"
+
+# Environment label
+# Options: dev, staging, prod
+environment = "dev"
+
+# Your public IP address with CIDR notation
+# EXAMPLE: "203.0.113.45/32" for a single IP
+# WARNING: DO NOT use "0.0.0.0/0" - it opens SSH to the entire internet
+# To find your IP: curl -s https://ifconfig.me
+allowed_ssh_cidr = "YOUR.IP.ADDRESS/32"
+
+# EC2 instance type
+# t3.xlarge = 4 vCPU, 16 GB RAM (recommended for K3s + dev workloads)
+# Smaller options: t3.large (2 vCPU, 8 GB), t3.2xlarge (8 vCPU, 32 GB)
+# Available: https://aws.amazon.com/ec2/instance-types/t3/
+instance_type = "t3.xlarge"
+
+# Name tag for the instance
+instance_name = "robo-stack-dev-workstation"
+
+# EBS root volume configuration
+root_volume_size = 100  # GB (minimum 50 for development)
+root_volume_type = "gp3"  # gp3 = good balance of cost/performance
+
+# Enable CloudWatch detailed monitoring (costs money)
+enable_monitoring = false
+
+# Associate public IP for SSH access
+associate_public_ip = true
+
+# VPC CIDR configuration
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+
+# Additional tags to apply to all resources
+tags = {
+  Owner       = "your-name"
+  CostCenter  = "your-cost-center"
+  Department  = "engineering"
+}
