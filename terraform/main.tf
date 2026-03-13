@@ -21,14 +21,13 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+}
 
-  default_tags {
-    tags = {
-      Project   = "robo-stack"
-      Environment = var.environment
-      ManagedBy = "terraform"
-      Sprint    = "1"
-      CreatedAt = timestamp()
-    }
+locals {
+  common_tags = {
+    Project     = "robo-stack"
+    Environment = var.environment
+    ManagedBy   = "terraform"
+    Sprint      = "1"
   }
 }

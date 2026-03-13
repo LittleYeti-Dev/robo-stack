@@ -60,6 +60,7 @@ output "instance_profile_arn" {
 
 output "next_steps" {
   description = "Next steps after infrastructure is deployed"
+  sensitive   = true
   value = format(
     <<-EOT
     Infrastructure deployed successfully!
