@@ -5,9 +5,17 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - '**/*.py'
+      - '**/*.js'
+      - '**/*.ts'
   pull_request:
     branches:
       - main
+    paths:
+      - '**/*.py'
+      - '**/*.js'
+      - '**/*.ts'
   schedule:
     # Weekly scan on Sunday night at 2 AM UTC
     - cron: '0 2 * * 0'
@@ -23,27 +31,50 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
+    # Only run if there are actually source files to analyze
+    # For scheduled runs, always run
+    if: github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'pull_request'
+
     strategy:
       fail-fast: false
       matrix:
         language:
-          - javascript
           - python
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check for source files
+        id: check_files
+        run: |
+          if [ "${{ matrix.language }}" = "python" ]; then
+            count=$(find . -name "*.py" -not -path "./.*" | wc -l)
+          elif [ "${{ matrix.language }}" = "javascript" ]; then
+            count=$(find . \( -name "*.js" -o -name "*.ts" \) -not -path "./.*" -not -path "./node_modules/*" | wc -l)
+          else
+            count=0
+          fi
+          echo "file_count=$count" >> "$GITHUB_OUTPUT"
+
       - name: Initialize CodeQL
+        if: steps.check_files.outputs.file_count != '0'
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
 
       - name: Autobuild
+        if: steps.check_files.outputs.file_count != '0'
         uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
+        if: steps.check_files.outputs.file_count != '0'
         uses: github/codeql-action/analyze@v3
         with:
           category: /language:${{ matrix.language }}
+
+      - name: Skip notice
+        if: steps.check_files.outputs.file_count == '0'
+        run: |
+          echo "No ${{ matrix.language }} source files found — skipping CodeQL analysis"

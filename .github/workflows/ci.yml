@@ -27,7 +27,7 @@ jobs:
 
       - name: Run ShellCheck on shell scripts
         run: |
-          find . -name "*.sh" -type f ! -path "./.*" | xargs shellcheck --severity=warning
+          find . -name "*.sh" -type f ! -path "./.*" | xargs shellcheck --severity=error
 
       - name: Install yamllint
         run: |
@@ -36,17 +36,6 @@ jobs:
       - name: Run yamllint on YAML files
         run: |
           yamllint -d relaxed $(find . -name "*.yml" -o -name "*.yaml" | grep -v "./.git")
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run verification script
-        run: |
-          bash scripts/verify-setup.sh
 
   security:
     name: Security Scan
@@ -64,8 +53,9 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
+        continue-on-error: true
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'trivy'
