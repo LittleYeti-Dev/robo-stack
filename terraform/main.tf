@@ -28,6 +28,6 @@ locals {
     Project     = "robo-stack"
     Environment = var.environment
     ManagedBy   = "terraform"
-    Sprint      = "1"
+    Sprint      = "2"
   }
 }

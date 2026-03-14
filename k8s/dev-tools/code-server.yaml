@@ -1,0 +1,109 @@
+---
+# S2.4: code-server (VS Code in browser) — K3s deployment
+# Access via SSH tunnel: ssh -L 8080:localhost:30080 ubuntu@<ec2-ip>
+# Then open http://localhost:8080 in your browser
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: code-server-data
+  namespace: robo-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: local-path
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: code-server
+  namespace: robo-stack
+  labels:
+    app: code-server
+    sprint: "2"
+    story: s2.4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: code-server
+  template:
+    metadata:
+      labels:
+        app: code-server
+    spec:
+      containers:
+        - name: code-server
+          image: codercom/code-server:4.96.4
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: code-server-credentials
+                  key: password
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/coder/workspace
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: code-server-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: code-server
+  namespace: robo-stack
+  labels:
+    app: code-server
+spec:
+  type: NodePort
+  selector:
+    app: code-server
+  ports:
+    - port: 8080
+      targetPort: http
+      nodePort: 30080
+      protocol: TCP
+      name: http
+
+---
+# Secret: code-server password (placeholder — apply real password separately)
+# kubectl create secret generic code-server-credentials \
+#   --namespace robo-stack \
+#   --from-literal=password=YOUR_PASSWORD
+apiVersion: v1
+kind: Secret
+metadata:
+  name: code-server-credentials
+  namespace: robo-stack
+type: Opaque
+stringData:
+  password: "PLACEHOLDER_REPLACE_ME"
