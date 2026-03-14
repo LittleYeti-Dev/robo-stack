@@ -21,7 +21,12 @@ spec:
     spec:
       containers:
         - name: claude-proxy
-          image: robo-stack/claude-proxy:0.1.0
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              pip install --no-cache-dir -r /app/requirements.txt &&
+              cd /app && python -m uvicorn app:app --host 0.0.0.0 --port 8000
           ports:
             - containerPort: 8000
               name: http
@@ -41,6 +46,9 @@ spec:
                 configMapKeyRef:
                   name: claude-proxy-config
                   key: max-retries
+          volumeMounts:
+            - name: app-code
+              mountPath: /app
           resources:
             requests:
               cpu: 100m
@@ -52,14 +60,18 @@ spec:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 30
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 5
+            initialDelaySeconds: 20
             periodSeconds: 10
+      volumes:
+        - name: app-code
+          configMap:
+            name: claude-proxy-code
       restartPolicy: Always
 
 ---
