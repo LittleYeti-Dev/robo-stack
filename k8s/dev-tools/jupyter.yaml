@@ -1,0 +1,113 @@
+---
+# S2.4: Jupyter Notebook — Python dev environment on K3s
+# Access via SSH tunnel: ssh -L 8888:localhost:30088 ubuntu@<ec2-ip>
+# Then open http://localhost:8888 in your browser
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jupyter-data
+  namespace: robo-stack
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter
+  namespace: robo-stack
+  labels:
+    app: jupyter
+    sprint: "2"
+    story: s2.4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter
+  template:
+    metadata:
+      labels:
+        app: jupyter
+    spec:
+      containers:
+        - name: jupyter
+          image: jupyter/scipy-notebook:python-3.11
+          ports:
+            - containerPort: 8888
+              name: http
+          args:
+            - start-notebook.py
+            - --NotebookApp.token=$(JUPYTER_TOKEN)
+            - --NotebookApp.allow_origin=*
+          env:
+            - name: JUPYTER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: jupyter-credentials
+                  key: token
+          volumeMounts:
+            - name: notebooks
+              mountPath: /home/jovyan/work
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          livenessProbe:
+            httpGet:
+              path: /api
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /api
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: notebooks
+          persistentVolumeClaim:
+            claimName: jupyter-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jupyter
+  namespace: robo-stack
+  labels:
+    app: jupyter
+spec:
+  type: NodePort
+  selector:
+    app: jupyter
+  ports:
+    - port: 8888
+      targetPort: http
+      nodePort: 30088
+      protocol: TCP
+      name: http
+
+---
+# Secret: Jupyter token (placeholder — apply real token separately)
+# kubectl create secret generic jupyter-credentials \
+#   --namespace robo-stack \
+#   --from-literal=token=YOUR_TOKEN
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jupyter-credentials
+  namespace: robo-stack
+type: Opaque
+stringData:
+  token: "PLACEHOLDER_REPLACE_ME"

@@ -1,0 +1,125 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-review:
+    name: Claude Code Review
+    runs-on: ubuntu-latest
+    # Skip drafts and bot PRs
+    if: github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr diff ${{ github.event.pull_request.number }} > /tmp/pr-diff.txt
+          # Truncate if too large (Claude has context limits)
+          if [ $(wc -c < /tmp/pr-diff.txt) -gt 100000 ]; then
+            head -c 100000 /tmp/pr-diff.txt > /tmp/pr-diff-truncated.txt
+            echo "[... diff truncated to 100KB ...]" >> /tmp/pr-diff-truncated.txt
+            mv /tmp/pr-diff-truncated.txt /tmp/pr-diff.txt
+          fi
+          echo "diff_size=$(wc -c < /tmp/pr-diff.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Read review prompt
+        id: prompt
+        run: |
+          if [ -f .github/ai-review-prompt.md ]; then
+            PROMPT=$(cat .github/ai-review-prompt.md)
+          else
+            PROMPT="Review this PR diff. Summarize changes, flag potential issues, and suggest improvements. Be concise."
+          fi
+          # Store in file for safe handling
+          echo "$PROMPT" > /tmp/review-prompt.txt
+
+      - name: Call Claude API for review
+        id: review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Build the API request
+          DIFF_CONTENT=$(cat /tmp/pr-diff.txt | jq -Rs .)
+          SYSTEM_PROMPT=$(cat /tmp/review-prompt.txt | jq -Rs .)
+          PR_TITLE=$(echo '${{ github.event.pull_request.title }}' | jq -Rs .)
+
+          cat > /tmp/api-request.json <<PAYLOAD
+          {
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": 2048,
+            "system": $SYSTEM_PROMPT,
+            "messages": [
+              {
+                "role": "user",
+                "content": "PR Title: ${{ github.event.pull_request.title }}\n\nPR Description: ${{ github.event.pull_request.body }}\n\nDiff:\n\`\`\`diff\n$(cat /tmp/pr-diff.txt | head -c 90000)\n\`\`\`"
+              }
+            ]
+          }
+          PAYLOAD
+
+          # Call Claude API
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d @/tmp/api-request.json)
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            # Extract review text from response
+            REVIEW=$(echo "$BODY" | jq -r '.content[0].text // "No review content returned"')
+            echo "$REVIEW" > /tmp/review-output.txt
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "Claude API returned HTTP $HTTP_CODE" > /tmp/review-output.txt
+            echo "$BODY" >> /tmp/review-output.txt
+            echo "status=failed" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post review comment
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ steps.review.outputs.status }}" = "success" ]; then
+            REVIEW_BODY=$(cat /tmp/review-output.txt)
+            COMMENT="## 🤖 AI Code Review (Claude)
+
+          $REVIEW_BODY
+
+          ---
+          *Automated review by Claude API · Diff size: ${{ steps.diff.outputs.diff_size }} bytes · [Configure](.github/ai-review-prompt.md)*"
+          else
+            COMMENT="## 🤖 AI Code Review
+
+          ⚠️ **Review unavailable** — Claude API did not return a successful response. This does not block merging.
+
+          <details>
+          <summary>Error details</summary>
+
+          \`\`\`
+          $(cat /tmp/review-output.txt)
+          \`\`\`
+          </details>
+
+          ---
+          *Automated review by Claude API · [Configure](.github/ai-review-prompt.md)*"
+          fi
+
+          gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT"

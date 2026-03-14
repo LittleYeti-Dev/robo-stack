@@ -1,0 +1,117 @@
+---
+# S2.3: Claude API Proxy — K8s Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-proxy
+  namespace: robo-stack
+  labels:
+    app: claude-proxy
+    sprint: "2"
+    story: s2.3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: claude-proxy
+  template:
+    metadata:
+      labels:
+        app: claude-proxy
+    spec:
+      containers:
+        - name: claude-proxy
+          image: robo-stack/claude-proxy:0.1.0
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: claude-api-credentials
+                  key: api-key
+            - name: RATE_LIMIT_RPM
+              valueFrom:
+                configMapKeyRef:
+                  name: claude-proxy-config
+                  key: rate-limit-rpm
+            - name: MAX_RETRIES
+              valueFrom:
+                configMapKeyRef:
+                  name: claude-proxy-config
+                  key: max-retries
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      restartPolicy: Always
+
+---
+# Service: Internal ClusterIP for other pods to access
+apiVersion: v1
+kind: Service
+metadata:
+  name: claude-proxy
+  namespace: robo-stack
+  labels:
+    app: claude-proxy
+spec:
+  type: ClusterIP
+  selector:
+    app: claude-proxy
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+
+---
+# ConfigMap: Non-secret configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claude-proxy-config
+  namespace: robo-stack
+data:
+  rate-limit-rpm: "10"
+  max-retries: "3"
+
+---
+# Secret: Claude API key (placeholder — apply real key separately)
+# kubectl create secret generic claude-api-credentials \
+#   --namespace robo-stack \
+#   --from-literal=api-key=YOUR_ANTHROPIC_API_KEY
+apiVersion: v1
+kind: Secret
+metadata:
+  name: claude-api-credentials
+  namespace: robo-stack
+type: Opaque
+stringData:
+  api-key: "PLACEHOLDER_REPLACE_ME"
+
+---
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: robo-stack
+  labels:
+    project: robo-stack
+    sprint: "2"
