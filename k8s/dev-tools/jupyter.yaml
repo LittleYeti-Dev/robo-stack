@@ -36,6 +36,7 @@ spec:
       labels:
         app: jupyter
     spec:
+      enableServiceLinks: false
       containers:
         - name: jupyter
           image: jupyter/scipy-notebook:python-3.11
@@ -83,7 +84,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jupyter
+  name: jupyter-svc
   namespace: robo-stack
   labels:
     app: jupyter
