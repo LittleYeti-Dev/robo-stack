@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprint 1 Retrospective — Robo Stack</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --orange: #db6d28;
+      --purple: #bc8cff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    header .badge {
+      display: inline-block;
+      background: var(--green);
+      color: var(--bg);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    h1 span { color: var(--accent); }
+
+    header .meta {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--accent);
+    }
+
+    p, li { font-size: 0.95rem; }
+    p { margin-bottom: 0.75rem; }
+
+    /* Metrics grid */
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .metric-card .value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .metric-card .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .yellow { color: var(--yellow); }
+    .accent { color: var(--accent); }
+    .purple { color: var(--purple); }
+    .orange { color: var(--orange); }
+
+    /* Story table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      background: var(--surface);
+      border-bottom: 2px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover td {
+      background: rgba(88, 166, 255, 0.04);
+    }
+
+    .status-done { color: var(--green); font-weight: 600; }
+    .status-deferred { color: var(--yellow); font-weight: 600; }
+
+    /* Sections with icons */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin: 1rem 0;
+    }
+
+    .section-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .section-card li {
+      padding: 0.4rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .section-card li::before {
+      position: absolute;
+      left: 0;
+      font-size: 0.9rem;
+    }
+
+    .went-well li::before { content: "✅"; }
+    .didnt-go-well li::before { content: "⚠️"; }
+    .action-items li::before { content: "→"; color: var(--accent); font-weight: 700; }
+
+    /* Agent comparison */
+    .agent-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .agent-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+
+    .agent-card .name {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .agent-card .score {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+
+    .agent-card ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .agent-card li { padding: 0.15rem 0; }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+      margin: 1.25rem 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 0.5rem;
+      top: 0.25rem;
+      bottom: 0.25rem;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -1.65rem;
+      top: 0.5rem;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+    }
+
+    .timeline-item .time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    .timeline-item .desc {
+      font-size: 0.9rem;
+    }
+
+    /* Issue registry */
+    .issue-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+    }
+
+    .issue-count .num {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--orange);
+    }
+
+    /* Infra summary */
+    .infra-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.25rem 1rem;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+    }
+
+    .infra-grid dt {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .infra-grid dd {
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      .agent-compare { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Complete</div>
+      <h1>Sprint 1 <span>Retrospective</span></h1>
+      <p class="meta">Robo Stack — Yeti Knowledge Systems &middot; Epic 1: Local Development Layer &middot; Closed 2026-03-13</p>
+    </header>
+
+    <!-- ═══ SPRINT METRICS ═══ -->
+    <h2>Sprint Metrics</h2>
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="value green">7<span style="font-size:1rem;color:var(--text-muted)">/8</span></div>
+        <div class="label">Stories Completed</div>
+      </div>
+      <div class="metric-card">
+        <div class="value green">87.5%</div>
+        <div class="label">Completion Rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="value accent">10</div>
+        <div class="label">Commits</div>
+      </div>
+      <div class="metric-card">
+        <div class="value accent">26</div>
+        <div class="label">AWS Resources Deployed</div>
+      </div>
+      <div class="metric-card">
+        <div class="value orange">10</div>
+        <div class="label">Issues Logged</div>
+      </div>
+      <div class="metric-card">
+        <div class="value green">6</div>
+        <div class="label">CI Fixes Shipped</div>
+      </div>
+      <div class="metric-card">
+        <div class="value yellow">1</div>
+        <div class="label">Story Deferred</div>
+      </div>
+      <div class="metric-card">
+        <div class="value purple">1 day</div>
+        <div class="label">Sprint Duration</div>
+      </div>
+    </div>
+
+    <!-- ═══ STORY STATUS ═══ -->
+    <h2>Story Outcomes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Issue</th>
+          <th>Story</th>
+          <th>Type</th>
+          <th>Agent</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/9">#9</a></td>
+          <td>S1.1: Epic 1 Process Design</td>
+          <td>Process</td>
+          <td>Claude Code</td>
+          <td class="status-done">✅ Done</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/10">#10</a></td>
+          <td>S1.2: Ubuntu Workstation Base Config</td>
+          <td>Build</td>
+          <td>Claude / Copilot</td>
+          <td class="status-done">✅ Done</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/11">#11</a></td>
+          <td>S1.3: Local K8s Cluster (K3s)</td>
+          <td>Build</td>
+          <td>Claude / Copilot</td>
+          <td class="status-done">✅ Done</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/12">#12</a></td>
+          <td>S1.4: CI/CD Pipeline (GitHub Actions)</td>
+          <td>Build</td>
+          <td>Claude / Copilot</td>
+          <td class="status-done">✅ Done</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/13">#13</a></td>
+          <td>S1.5: Security Baseline</td>
+          <td>Build</td>
+          <td>Claude / Copilot</td>
+          <td class="status-done">✅ Done</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/14">#14</a></td>
+          <td>EV1.1: K3s vs Minikube Eval Gate</td>
+          <td>Eval</td>
+          <td>Claude Code</td>
+          <td class="status-done">✅ Done</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/15">#15</a></td>
+          <td>S1.6: Copilot Agent Mode Test</td>
+          <td>Build</td>
+          <td>Copilot Agent</td>
+          <td class="status-done">✅ Done</td>
+        </tr>
+        <tr>
+          <td><a href="https://github.com/LittleYeti-Dev/robo-stack/issues/16">#16</a></td>
+          <td>TP1: Sprint 1 Touchpoint</td>
+          <td>Touchpoint</td>
+          <td>Cowork</td>
+          <td class="status-deferred">⏭️ Deferred → S2</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ═══ WHAT WENT WELL ═══ -->
+    <h2>What Went Well</h2>
+    <div class="section-card went-well">
+      <ul>
+        <li><strong>Full AWS infrastructure deployed via Terraform</strong> — 26 resources (VPC, EC2, IAM, security groups) provisioned from code in a single session. All IaC, no manual setup.</li>
+        <li><strong>CI pipeline end-to-end operational</strong> — 5 GitHub Actions workflows (CI, CodeQL, security scan, markdown lint, local deploy) all passing green after debugging 6 issues live.</li>
+        <li><strong>Process-first design paid off</strong> — S1.1 established the sprint structure, naming conventions, and agent prompts before any build work began. Zero confusion on scope or approach.</li>
+        <li><strong>Claude Code/Cowork proved highly effective</strong> — handled Terraform, CI/CD debugging, scripting, documentation, issue tracking, and sprint management all within a single session.</li>
+        <li><strong>Issue tracking discipline maintained</strong> — all 10 incidents logged to both the Notion Issue Registry and the GitHub wiki with root cause analysis and preventive actions.</li>
+        <li><strong>Eval gates worked as intended</strong> — EV1.1 (K3s vs Minikube) produced a clear decision with documented rationale. S1.6 (Copilot test) provided actionable data for agent routing.</li>
+      </ul>
+    </div>
+
+    <!-- ═══ WHAT DIDN'T GO WELL ═══ -->
+    <h2>What Didn't Go Well</h2>
+    <div class="section-card didnt-go-well">
+      <ul>
+        <li><strong>Copilot Agent Mode failed to deliver</strong> — scored 1/5 on the S1.6 hands-on test. Created a branch and PR but produced 0 lines of code before being cancelled at 2m41s. Not viable for agentic tasks.</li>
+        <li><strong>6 CI workflow issues discovered post-merge</strong> — ShellCheck severity, yamllint path filtering, CodeQL v2 deprecation, Node.js 16 EOL, and others required multiple fix commits. Would have been caught with a staging branch.</li>
+        <li><strong>Terraform provider quirks</strong> — <code>default_tags</code> with <code>timestamp()</code> causes perpetual plan drift (known AWS provider bug). Egress rules with <code>ip_protocol="-1"</code> silently reject port specifications. Both required debugging time.</li>
+        <li><strong>AWS credential expiration</strong> — root access keys expired mid-session. Required manual console intervention to start the EC2 instance. Need a more robust IAM setup.</li>
+        <li><strong>TP1 touchpoint not completed</strong> — deferred to Sprint 2 as TP2.0. Sprint velocity was focused on build work, leaving the stakeholder review for later.</li>
+      </ul>
+    </div>
+
+    <!-- ═══ AGENT PERFORMANCE ═══ -->
+    <h2>Agent Performance Comparison</h2>
+    <div class="agent-compare">
+      <div class="agent-card">
+        <div class="name">Claude Code / Cowork</div>
+        <div class="score green">★★★★★ 5/5</div>
+        <ul>
+          <li>Terraform authoring + debugging</li>
+          <li>6 CI workflow fixes in one session</li>
+          <li>AWS deployment (26 resources)</li>
+          <li>Sprint orchestration + issue tracking</li>
+          <li>Documentation (wiki, Notion, reports)</li>
+          <li>10+ files created or fixed</li>
+        </ul>
+      </div>
+      <div class="agent-card">
+        <div class="name">GitHub Copilot Agent Mode</div>
+        <div class="score red">★☆☆☆☆ 1/5</div>
+        <ul>
+          <li>Created a branch and opened a PR</li>
+          <li>Produced 0 lines of code</li>
+          <li>Cancelled after 2m 41s</li>
+          <li>Empty commit pushed</li>
+          <li>Not viable for agentic work</li>
+          <li>Retained for inline completion only</li>
+        </ul>
+      </div>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.85rem;">
+      <strong>Routing decision:</strong> All agentic coding tasks route to Claude Code/Cowork for Sprint 2.
+      Copilot retained for inline IDE completion. Re-evaluate Copilot Agent Mode in Sprint 3.
+    </p>
+
+    <!-- ═══ COMMIT TIMELINE ═══ -->
+    <h2>Commit Timeline</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="time">13:46 CST</div>
+        <div class="desc"><code>876d88e</code> — Initial GitHub Pages site and README</div>
+      </div>
+      <div class="timeline-item">
+        <div class="time">15:34 CST</div>
+        <div class="desc"><code>b36ae23</code> — Sprint 1 build: AWS IaC, CI/CD, security, architecture dashboard</div>
+      </div>
+      <div class="timeline-item">
+        <div class="time">16:05 CST</div>
+        <div class="desc"><code>2bcaa84</code> — GitHub Actions workflow for Markdown linting</div>
+      </div>
+      <div class="timeline-item">
+        <div class="time">18:03 CST</div>
+        <div class="desc"><code>5375cac</code> — Fix Terraform default_tags and egress rule issues</div>
+      </div>
+      <div class="timeline-item">
+        <div class="time">18:06 CST</div>
+        <div class="desc"><code>57a84fa</code> — Resolve all CI workflow failures</div>
+      </div>
+      <div class="timeline-item">
+        <div class="time">18:09 CST</div>
+        <div class="desc"><code>3617a3f</code> — Fix yamllint .github dir filtering</div>
+      </div>
+      <div class="timeline-item">
+        <div class="time">18:12 CST</div>
+        <div class="desc"><code>1867426</code> — CI workflow troubleshooting guide</div>
+      </div>
+      <div class="timeline-item">
+        <div class="time">19:29 CST</div>
+        <div class="desc"><code>9f7f68f</code> — Copilot Agent Mode test report (1/5 score)</div>
+      </div>
+    </div>
+
+    <!-- ═══ ISSUES LOGGED ═══ -->
+    <h2>Issue Registry Summary</h2>
+    <div class="issue-count">
+      <span class="num">10</span>
+      <span>issues logged to <a href="https://www.notion.so/07aa168fb3764467b856fc2ad37ef312">Notion Issue Registry</a></span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Issue</th>
+          <th>Category</th>
+          <th>Root Cause</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Terraform default_tags plan drift</td>
+          <td>IaC</td>
+          <td><code>timestamp()</code> in provider default_tags</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>Terraform egress port error</td>
+          <td>IaC</td>
+          <td><code>ip_protocol="-1"</code> rejects port spec</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>Terraform sensitive output error</td>
+          <td>IaC</td>
+          <td>Output references sensitive variable</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>ShellCheck warnings failing CI</td>
+          <td>CI/CD</td>
+          <td>Severity set to <code>warning</code>, not <code>error</code></td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>verify-setup.sh requires Docker</td>
+          <td>CI/CD</td>
+          <td>Script needs Docker/K3s on runner</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>CodeQL v2 deprecated</td>
+          <td>CI/CD</td>
+          <td>Actions v2 EOL, upgraded to v3</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>yamllint empty input</td>
+          <td>CI/CD</td>
+          <td><code>grep -v "./.git"</code> over-filters</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>Markdown lint Node.js 16 EOL</td>
+          <td>CI/CD</td>
+          <td>ESM modules fail on Node 16</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>CodeQL no source files</td>
+          <td>CI/CD</td>
+          <td>JS in matrix but no JS files exist</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+        <tr>
+          <td>AWS CLI credentials expired</td>
+          <td>AWS</td>
+          <td>Root access keys expired mid-session</td>
+          <td class="status-done">Resolved</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ═══ INFRASTRUCTURE ═══ -->
+    <h2>Infrastructure Deployed</h2>
+    <dl class="infra-grid">
+      <dt>Instance</dt>
+      <dd>i-0760725a72f766ba9 (t3.xlarge, us-east-1a)</dd>
+      <dt>Public IP</dt>
+      <dd>54.196.112.58</dd>
+      <dt>K8s API</dt>
+      <dd>https://54.196.112.58:6443</dd>
+      <dt>Stack</dt>
+      <dd>Docker 29.3.0, K3s v1.34.5, Helm 3.20.1, Node.js 20, Python 3.10</dd>
+      <dt>IaC</dt>
+      <dd>terraform/ — VPC, EC2, IAM, SGs (26 resources)</dd>
+      <dt>Estimated Cost</dt>
+      <dd>~$155/mo at full uptime</dd>
+    </dl>
+
+    <!-- ═══ ACTION ITEMS ═══ -->
+    <h2>Action Items for Sprint 2</h2>
+    <div class="section-card action-items">
+      <ul>
+        <li><strong>Complete TP2.0</strong> — Sprint 1 retrospective (this doc) + Sprint 2 scope definition and planning</li>
+        <li><strong>Improve CI testing process</strong> — use a staging branch to validate workflow changes before merging to main</li>
+        <li><strong>Set up IAM user with scoped permissions</strong> — replace root access keys to prevent credential expiration issues</li>
+        <li><strong>Implement EC2 auto-stop</strong> — Lambda or CloudWatch rule to stop the instance after idle hours to reduce cost</li>
+        <li><strong>Define Sprint 2 epic and stories</strong> — scope determined during TP2.0 kickoff</li>
+        <li><strong>Begin Content Ops Sprint 1 scoping</strong> — define PoC scope for the blog-based Signal workflow</li>
+        <li><strong>Re-evaluate Copilot Agent Mode in Sprint 3</strong> — check for improvements before retesting</li>
+      </ul>
+    </div>
+
+    <!-- ═══ LESSONS LEARNED ═══ -->
+    <h2>Lessons Learned</h2>
+    <div class="section-card">
+      <h3>1. Process-first design eliminates ambiguity</h3>
+      <p>Starting Sprint 1 with S1.1 (process design) before any build stories meant every team member (human and AI) had clear scope, naming, and acceptance criteria. Zero rework from misaligned expectations.</p>
+
+      <h3>2. Test your CI in a branch, not on main</h3>
+      <p>Six CI issues post-merge cost multiple fix-then-check cycles. A staging branch with a test run would have caught all of them before the commit history grew. Enforce this for Sprint 2.</p>
+
+      <h3>3. Agent selection matters more than agent hype</h3>
+      <p>Copilot Agent Mode scored 1/5 — it created a PR but wrote zero code. Claude handled every substantive task. Agent routing should be based on measured performance, not marketing. Always eval before you trust.</p>
+
+      <h3>4. Document incidents as they happen</h3>
+      <p>Logging all 10 issues to Notion with root cause, fix, and preventive action while the context was fresh means future sprints have a searchable knowledge base. Don't defer documentation — it decays fast.</p>
+
+      <h3>5. Terraform provider quirks require defensive coding</h3>
+      <p>The <code>default_tags</code> + <code>timestamp()</code> bug and the egress port rejection are both known issues but poorly documented. Always test <code>terraform plan</code> idempotency before deploying, and avoid dynamic values in provider-level config.</p>
+    </div>
+
+    <footer>
+      <p>Robo Stack — Yeti Knowledge Systems &middot; Sprint 1 Retrospective &middot; Generated 2026-03-13</p>
+      <p><a href="https://github.com/LittleYeti-Dev/robo-stack">GitHub</a> &middot; <a href="https://github.com/LittleYeti-Dev/robo-stack/wiki">Wiki</a> &middot; <a href="https://www.notion.so/07aa168fb3764467b856fc2ad37ef312">Issue Registry</a></p>
+    </footer>
+  </div>
+</body>
+</html>
