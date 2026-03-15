@@ -1,0 +1,219 @@
+###############################################################################
+# Deploy to Staging — Robo Stack
+# Triggered on semver tag push (v*.*.*). Builds container images tagged with
+# the version, pushes to GHCR, and deploys to the staging K8s cluster.
+###############################################################################
+name: Deploy to Staging
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+  packages: write
+  deployments: write
+  issues: write
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/claude-proxy
+  NAMESPACE: robo-stack-staging
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Build, push, and deploy to staging
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Build & Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      # -- Checkout at tag ----------------------------------------------------
+      - name: Checkout repository at tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      # -- Docker Buildx ------------------------------------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # -- GHCR Login ---------------------------------------------------------
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # -- Build & Push --------------------------------------------------------
+      - name: Build and push container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging-latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+
+      # -- Configure kubectl --------------------------------------------------
+      - name: Configure kubectl
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      # -- Deploy via kustomize -----------------------------------------------
+      - name: Deploy to staging cluster
+        run: |
+          cd k8s/overlays/staging/
+          kustomize edit set image claude-proxy=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+          kustomize build . | kubectl apply -f -
+
+      # -- Deployment metadata ConfigMap --------------------------------------
+      - name: Create deployment metadata ConfigMap
+        run: |
+          kubectl create configmap deployment-metadata \
+            --namespace=${{ env.NAMESPACE }} \
+            --from-literal=deployed-at="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --from-literal=image-tag="${{ env.VERSION }}" \
+            --from-literal=git-sha="${{ github.sha }}" \
+            --from-literal=deployed-by="${{ github.actor }}" \
+            --from-literal=environment="staging" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # -- Wait for rollout ---------------------------------------------------
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/claude-proxy \
+            -n ${{ env.NAMESPACE }} \
+            --timeout=300s
+
+      # -- Integration tests --------------------------------------------------
+      - name: Run integration tests
+        run: |
+          SERVICE_URL=$(kubectl get svc claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -z "$SERVICE_URL" ]; then
+            SERVICE_URL=$(kubectl get svc claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.clusterIP}')
+          fi
+
+          echo "=== Health Check ==="
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://${SERVICE_URL}/health")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "FAIL: Health endpoint returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "PASS: Health endpoint returned HTTP 200"
+
+          echo "=== Metrics Check ==="
+          METRICS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://${SERVICE_URL}/metrics")
+          if [ "$METRICS_CODE" != "200" ]; then
+            echo "FAIL: Metrics endpoint returned HTTP $METRICS_CODE"
+            exit 1
+          fi
+          echo "PASS: Metrics endpoint returned HTTP 200"
+
+          echo "=== Basic Functionality Check ==="
+          READY=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.status.readyReplicas}')
+          DESIRED=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}')
+          if [ "$READY" != "$DESIRED" ]; then
+            echo "FAIL: Ready replicas ($READY) != desired ($DESIRED)"
+            exit 1
+          fi
+          echo "PASS: All $READY/$DESIRED replicas ready"
+
+          echo "=== All integration tests passed ==="
+
+      # -- Create GitHub Deployment record ------------------------------------
+      - name: Create GitHub Deployment
+        id: deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.ref,
+              environment: 'staging',
+              auto_merge: false,
+              required_contexts: [],
+              description: `Staging deploy ${process.env.VERSION}`
+            });
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              description: 'Staging deployment succeeded',
+              environment_url: 'https://staging.robo-stack.internal'
+            });
+
+  # ---------------------------------------------------------------------------
+  # Rollback and issue creation on failure
+  # ---------------------------------------------------------------------------
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    timeout-minutes: 5
+
+    steps:
+      - name: Configure kubectl
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Rollback deployment
+        run: |
+          echo "Rolling back claude-proxy in ${{ env.NAMESPACE }}..."
+          kubectl rollout undo deployment/claude-proxy -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/claude-proxy -n ${{ env.NAMESPACE }} --timeout=120s
+          echo "Rollback complete."
+
+      - name: Create failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Staging deployment failed: ${process.env.VERSION}`,
+              labels: ['deployment-failure', 'staging'],
+              body: [
+                `## Staging Deployment Failure`,
+                ``,
+                `| Detail | Value |`,
+                `|--------|-------|`,
+                `| **Version** | \`${process.env.VERSION}\` |`,
+                `| **Git SHA** | \`${context.sha}\` |`,
+                `| **Actor** | @${context.actor} |`,
+                `| **Workflow Run** | [View logs](${runUrl}) |`,
+                `| **Timestamp** | ${new Date().toISOString()} |`,
+                ``,
+                `### What happened`,
+                `The staging deployment for \`${process.env.VERSION}\` failed. An automatic rollback was executed.`,
+                ``,
+                `### Next steps`,
+                `1. Review the [workflow logs](${runUrl})`,
+                `2. Check pod logs: \`kubectl logs -l app=claude-proxy -n ${process.env.NAMESPACE} --tail=100\``,
+                `3. Verify the rollback is healthy: \`kubectl get pods -n ${process.env.NAMESPACE}\``,
+                `4. Fix the issue and re-tag once resolved`,
+              ].join('\n')
+            });
