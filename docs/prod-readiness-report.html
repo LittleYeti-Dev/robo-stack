@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robo Stack &mdash; Production Readiness Report</title>
+<style>
+  :root {
+    --pass: #22c55e;
+    --fail: #ef4444;
+    --warn: #f59e0b;
+    --skip: #64748b;
+    --pending: #8b5cf6;
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --border: #475569;
+    --accent: #3b82f6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem; }
+  h2 {
+    font-size: 1.35rem; margin: 2rem 0 1rem 0;
+    padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);
+  }
+
+  /* Summary dashboard */
+  .dashboard {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface); border-radius: 8px; padding: 1.25rem;
+    text-align: center; border: 1px solid var(--border);
+  }
+  .stat-card .value { font-size: 2.25rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+  .stat-card.pass .value { color: var(--pass); }
+  .stat-card.fail .value { color: var(--fail); }
+  .stat-card.warn .value { color: var(--warn); }
+  .stat-card.skip .value { color: var(--skip); }
+  .stat-card.total .value { color: var(--accent); }
+  .stat-card.rate .value { color: var(--text); }
+
+  .recommendation {
+    padding: 1rem 1.5rem; border-radius: 8px; font-size: 1.1rem;
+    font-weight: 600; text-align: center; margin-bottom: 2rem;
+    border: 2px solid;
+  }
+  .recommendation.go { background: rgba(34,197,94,0.1); border-color: var(--pass); color: var(--pass); }
+  .recommendation.nogo { background: rgba(239,68,68,0.1); border-color: var(--fail); color: var(--fail); }
+  .recommendation.pending { background: rgba(139,92,246,0.1); border-color: var(--pending); color: var(--pending); }
+
+  /* Check tables */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+  th {
+    text-align: left; padding: 0.6rem 0.75rem; background: var(--surface2);
+    font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-muted); border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border);
+    vertical-align: top; font-size: 0.9rem;
+  }
+  tr:hover td { background: rgba(59,130,246,0.04); }
+
+  .badge {
+    display: inline-block; padding: 0.15rem 0.6rem; border-radius: 4px;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .badge-pass { background: rgba(34,197,94,0.15); color: var(--pass); }
+  .badge-fail { background: rgba(239,68,68,0.15); color: var(--fail); }
+  .badge-warn { background: rgba(245,158,11,0.15); color: var(--warn); }
+  .badge-skip { background: rgba(100,116,139,0.15); color: var(--skip); }
+  .badge-pending { background: rgba(139,92,246,0.15); color: var(--pending); }
+
+  .remediation { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+  /* Sign-off */
+  .signoff {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.5rem; margin-top: 2rem;
+  }
+  .signoff h3 { margin-bottom: 0.75rem; }
+  .signoff-field { margin-bottom: 0.5rem; }
+  .signoff-field label { display: inline-block; width: 120px; font-weight: 600; color: var(--text-muted); }
+  .signoff-field span { color: var(--text); }
+
+  .footer {
+    text-align: center; margin-top: 3rem; padding-top: 1rem;
+    border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Robo Stack &mdash; Production Readiness Report</h1>
+<p class="subtitle">Project: Robo Stack | Repo: github.com/LittleYeti-Dev/robo-stack | Generated: <span id="report-date">PENDING</span></p>
+
+<!-- ===== Summary Dashboard ===== -->
+<h2>Summary</h2>
+<div class="dashboard">
+  <div class="stat-card total"><div class="value" id="total-count">--</div><div class="label">Total Checks</div></div>
+  <div class="stat-card pass"><div class="value" id="pass-count">--</div><div class="label">Passed</div></div>
+  <div class="stat-card fail"><div class="value" id="fail-count">--</div><div class="label">Failed</div></div>
+  <div class="stat-card warn"><div class="value" id="warn-count">--</div><div class="label">Warnings</div></div>
+  <div class="stat-card skip"><div class="value" id="skip-count">--</div><div class="label">Skipped</div></div>
+  <div class="stat-card rate"><div class="value" id="pass-rate">--%</div><div class="label">Pass Rate</div></div>
+</div>
+
+<div class="recommendation pending" id="recommendation">PENDING &mdash; Run prod-readiness-check.sh to populate</div>
+
+<!-- ===== Infrastructure ===== -->
+<h2>Infrastructure Checks</h2>
+<table>
+<thead><tr><th>Check</th><th>Status</th><th>Details / Remediation</th></tr></thead>
+<tbody id="infra-checks">
+  <tr><td>EC2 / Node reachable</td><td><span class="badge badge-pending">PENDING</span></td><td>Ping test to NODE_HOST<div class="remediation">Verify NODE_HOST, check instance state.</div></td></tr>
+  <tr><td>K3s cluster health &mdash; nodes Ready</td><td><span class="badge badge-pending">PENDING</span></td><td>kubectl get nodes shows all Ready<div class="remediation">sudo systemctl restart k3s</div></td></tr>
+  <tr><td>Namespace: robo-stack</td><td><span class="badge badge-pending">PENDING</span></td><td>Namespace must exist<div class="remediation">kubectl create namespace robo-stack</div></td></tr>
+  <tr><td>Namespace: robo-stack-staging</td><td><span class="badge badge-pending">PENDING</span></td><td>Namespace must exist<div class="remediation">kubectl create namespace robo-stack-staging</div></td></tr>
+  <tr><td>Namespace: robo-stack-prod</td><td><span class="badge badge-pending">PENDING</span></td><td>Namespace must exist<div class="remediation">kubectl create namespace robo-stack-prod</div></td></tr>
+  <tr><td>Resource quotas: robo-stack</td><td><span class="badge badge-pending">PENDING</span></td><td>ResourceQuota applied<div class="remediation">kubectl apply -f k8s/quotas/</div></td></tr>
+  <tr><td>Resource quotas: robo-stack-staging</td><td><span class="badge badge-pending">PENDING</span></td><td>ResourceQuota applied<div class="remediation">kubectl apply -f k8s/quotas/</div></td></tr>
+  <tr><td>Resource quotas: robo-stack-prod</td><td><span class="badge badge-pending">PENDING</span></td><td>ResourceQuota applied<div class="remediation">kubectl apply -f k8s/quotas/</div></td></tr>
+  <tr><td>Network policies in prod</td><td><span class="badge badge-pending">PENDING</span></td><td>At least 1 NetworkPolicy in robo-stack-prod<div class="remediation">kubectl apply -f k8s/hardening/network-policies.yaml</div></td></tr>
+</tbody>
+</table>
+
+<!-- ===== Deployment Pipeline ===== -->
+<h2>Deployment Pipeline Checks</h2>
+<table>
+<thead><tr><th>Check</th><th>Status</th><th>Details / Remediation</th></tr></thead>
+<tbody id="deploy-checks">
+  <tr><td>deploy-dev.yml exists</td><td><span class="badge badge-pending">PENDING</span></td><td>.github/workflows/deploy-dev.yml<div class="remediation">Create CI/CD workflow for dev environment.</div></td></tr>
+  <tr><td>deploy-staging.yml exists</td><td><span class="badge badge-pending">PENDING</span></td><td>.github/workflows/deploy-staging.yml<div class="remediation">Create CI/CD workflow for staging environment.</div></td></tr>
+  <tr><td>deploy-prod.yml exists</td><td><span class="badge badge-pending">PENDING</span></td><td>.github/workflows/deploy-prod.yml<div class="remediation">Create CI/CD workflow for prod environment.</div></td></tr>
+  <tr><td>rollback.sh exists &amp; executable</td><td><span class="badge badge-pending">PENDING</span></td><td>scripts/rollback.sh<div class="remediation">Create and chmod +x scripts/rollback.sh</div></td></tr>
+  <tr><td>Deployment metadata ConfigMap</td><td><span class="badge badge-pending">PENDING</span></td><td>ConfigMap with git SHA, timestamp, deployer<div class="remediation">Add deploy-metadata ConfigMap to k8s manifests.</div></td></tr>
+</tbody>
+</table>
+
+<!-- ===== Monitoring ===== -->
+<h2>Monitoring Checks</h2>
+<table>
+<thead><tr><th>Check</th><th>Status</th><th>Details / Remediation</th></tr></thead>
+<tbody id="monitor-checks">
+  <tr><td>Prometheus targets &gt; 0</td><td><span class="badge badge-pending">PENDING</span></td><td>Active scrape targets in Prometheus<div class="remediation">Check scrape configs and ServiceMonitor CRDs.</div></td></tr>
+  <tr><td>Grafana health on :30090</td><td><span class="badge badge-pending">PENDING</span></td><td>/api/health returns HTTP 200<div class="remediation">Check Grafana pod status and NodePort config.</div></td></tr>
+  <tr><td>Loki receiving logs</td><td><span class="badge badge-pending">PENDING</span></td><td>/ready returns HTTP 200<div class="remediation">Check Loki pod and storage backend.</div></td></tr>
+  <tr><td>Alert rules loaded</td><td><span class="badge badge-pending">PENDING</span></td><td>At least 1 alert rule in Prometheus<div class="remediation">Apply PrometheusRule CRDs or update rule_files.</div></td></tr>
+  <tr><td>Grafana dashboards loaded</td><td><span class="badge badge-pending">PENDING</span></td><td>Dashboards provisioned via ConfigMap<div class="remediation">Import dashboards via provisioning or Grafana API.</div></td></tr>
+</tbody>
+</table>
+
+<!-- ===== Security ===== -->
+<h2>Security Checks</h2>
+<table>
+<thead><tr><th>Check</th><th>Status</th><th>Details / Remediation</th></tr></thead>
+<tbody id="security-checks">
+  <tr><td>IMDSv2 enforced</td><td><span class="badge badge-pending">PENDING</span></td><td>Token-based metadata access only<div class="remediation">aws ec2 modify-instance-metadata-options --http-tokens required</div></td></tr>
+  <tr><td>No secrets in git history</td><td><span class="badge badge-pending">PENDING</span></td><td>Scan for AWS keys, API tokens<div class="remediation">Run gitleaks detect --source . --verbose</div></td></tr>
+  <tr><td>Container image scan (trivy)</td><td><span class="badge badge-pending">PENDING</span></td><td>Vulnerability scan on container images<div class="remediation">Install trivy and run: trivy image &lt;image&gt;</div></td></tr>
+  <tr><td>K8s RBAC &mdash; default SA restricted</td><td><span class="badge badge-pending">PENDING</span></td><td>Default service account cannot create pods<div class="remediation">Remove overprivileged bindings; use dedicated SAs.</div></td></tr>
+  <tr><td>Prod network policies block cross-NS</td><td><span class="badge badge-pending">PENDING</span></td><td>Deny cross-namespace ingress by default<div class="remediation">Apply default-deny + explicit allow NetworkPolicies.</div></td></tr>
+  <tr><td>Branch protection on main</td><td><span class="badge badge-pending">PENDING</span></td><td>Require PR reviews and status checks<div class="remediation">Enable via GitHub Settings &gt; Branches &gt; main.</div></td></tr>
+</tbody>
+</table>
+
+<!-- ===== Application ===== -->
+<h2>Application Checks</h2>
+<table>
+<thead><tr><th>Check</th><th>Status</th><th>Details / Remediation</th></tr></thead>
+<tbody id="app-checks">
+  <tr><td>Claude proxy health check</td><td><span class="badge badge-pending">PENDING</span></td><td>/health returns HTTP 200<div class="remediation">Check pod status and readiness probe.</div></td></tr>
+  <tr><td>Claude proxy /metrics (Prometheus)</td><td><span class="badge badge-pending">PENDING</span></td><td>/metrics returns # HELP / # TYPE lines<div class="remediation">Expose Prometheus-format metrics endpoint.</div></td></tr>
+  <tr><td>Rate limiting enabled</td><td><span class="badge badge-pending">PENDING</span></td><td>X-RateLimit-* headers in responses<div class="remediation">Configure rate limiter in Claude proxy.</div></td></tr>
+  <tr><td>Structured JSON logging</td><td><span class="badge badge-pending">PENDING</span></td><td>Pod logs are JSON-formatted<div class="remediation">Switch to a JSON log formatter in the application.</div></td></tr>
+</tbody>
+</table>
+
+<!-- ===== Sign-off ===== -->
+<div class="signoff">
+  <h3>Production Go-Live Sign-Off</h3>
+  <div class="signoff-field"><label>Approved By:</label> <span>Yeti (Project Lead)</span></div>
+  <div class="signoff-field"><label>Role:</label> <span>DevSecOps Engineer + Overwatch (Security Lead)</span></div>
+  <div class="signoff-field"><label>Date:</label> <span id="signoff-date">________________</span></div>
+  <div class="signoff-field"><label>Decision:</label> <span id="signoff-decision">PENDING</span></div>
+  <div class="signoff-field" style="margin-top:0.75rem"><label>Notes:</label> <span>All critical checks must PASS before go-live. Warnings are acceptable with documented risk acceptance.</span></div>
+</div>
+
+<div class="footer">
+  Robo Stack Production Readiness Report | LittleYeti-Dev | Generated by prod-readiness-check.sh
+</div>
+
+</div><!-- .container -->
+
+<script>
+// =========================================================================
+// Auto-populate from embedded JSON results (injected by prod-readiness-check.sh)
+// or calculate from DOM if data attributes are present.
+// =========================================================================
+
+// If results JSON is available (injected as window.READINESS_RESULTS), use it.
+// Otherwise, count badges in the DOM.
+(function() {
+  var data = window.READINESS_RESULTS || null;
+
+  if (data && data.summary) {
+    populate(data);
+  } else {
+    calculateFromDOM();
+  }
+
+  function populate(d) {
+    var s = d.summary;
+    setText('total-count', s.total);
+    setText('pass-count', s.pass);
+    setText('fail-count', s.fail);
+    setText('warn-count', s.warn);
+    setText('skip-count', s.skip);
+    var rate = s.total > 0 ? Math.round((s.pass / s.total) * 100) : 0;
+    setText('pass-rate', rate + '%');
+    setText('report-date', d.timestamp || new Date().toISOString());
+
+    var rec = document.getElementById('recommendation');
+    if (d.recommendation === 'GO') {
+      rec.textContent = 'RECOMMENDATION: GO';
+      rec.className = 'recommendation go';
+    } else {
+      rec.textContent = 'RECOMMENDATION: NO-GO (' + s.critical_failures + ' critical failure(s))';
+      rec.className = 'recommendation nogo';
+    }
+
+    // Update individual check rows
+    if (d.checks) {
+      var tables = document.querySelectorAll('tbody');
+      var categoryMap = {
+        'Infrastructure': 0, 'Deployment': 1,
+        'Monitoring': 2, 'Security': 3, 'Application': 4
+      };
+      d.checks.forEach(function(chk) {
+        var tIdx = categoryMap[chk.category];
+        if (tIdx === undefined) return;
+        var tbody = tables[tIdx];
+        if (!tbody) return;
+        var rows = tbody.querySelectorAll('tr');
+        rows.forEach(function(row) {
+          var name = row.cells[0].textContent.trim();
+          if (name.toLowerCase().indexOf(chk.name.toLowerCase().substring(0, 20)) !== -1 ||
+              chk.name.toLowerCase().indexOf(name.toLowerCase().substring(0, 20)) !== -1) {
+            var badge = row.querySelector('.badge');
+            if (badge) {
+              badge.textContent = chk.status;
+              badge.className = 'badge badge-' + chk.status.toLowerCase();
+            }
+          }
+        });
+      });
+    }
+  }
+
+  function calculateFromDOM() {
+    var badges = document.querySelectorAll('.badge');
+    var counts = { pass: 0, fail: 0, warn: 0, skip: 0, pending: 0 };
+    badges.forEach(function(b) {
+      var text = b.textContent.trim().toUpperCase();
+      if (text === 'PASS') counts.pass++;
+      else if (text === 'FAIL') counts.fail++;
+      else if (text === 'WARN') counts.warn++;
+      else if (text === 'SKIP') counts.skip++;
+      else counts.pending++;
+    });
+    var total = counts.pass + counts.fail + counts.warn + counts.skip + counts.pending;
+    setText('total-count', total);
+    setText('pass-count', counts.pass);
+    setText('fail-count', counts.fail);
+    setText('warn-count', counts.warn);
+    setText('skip-count', counts.skip + counts.pending);
+    var rate = total > 0 ? Math.round((counts.pass / total) * 100) : 0;
+    setText('pass-rate', rate + '%');
+    setText('report-date', new Date().toISOString().split('T')[0]);
+
+    var rec = document.getElementById('recommendation');
+    if (counts.pending > 0) {
+      rec.textContent = 'PENDING -- Run prod-readiness-check.sh to populate results';
+      rec.className = 'recommendation pending';
+    } else if (counts.fail > 0) {
+      rec.textContent = 'RECOMMENDATION: NO-GO (' + counts.fail + ' failure(s))';
+      rec.className = 'recommendation nogo';
+    } else {
+      rec.textContent = 'RECOMMENDATION: GO';
+      rec.className = 'recommendation go';
+    }
+  }
+
+  function setText(id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+  }
+})();
+</script>
+</body>
+</html>

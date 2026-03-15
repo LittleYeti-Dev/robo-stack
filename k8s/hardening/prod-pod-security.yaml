@@ -1,0 +1,114 @@
+###############################################################################
+# Robo Stack — Pod Security Standards for Production Namespace
+#
+# Enforces the "restricted" Pod Security Standard (PSS) at all levels:
+#   - enforce: Pods violating the restricted profile are REJECTED
+#   - audit:   Violations are logged in the API server audit log
+#   - warn:    Violations produce a warning to the deploying user
+#
+# Restricted profile requirements:
+#   - No privileged containers
+#   - No hostNetwork, hostPID, hostIPC
+#   - No hostPath volumes
+#   - runAsNonRoot required
+#   - Seccomp profile must be RuntimeDefault or Localhost
+#   - Capabilities restricted (only NET_BIND_SERVICE allowed)
+#   - No privilege escalation (allowPrivilegeEscalation: false)
+#
+# Apply: kubectl apply -f k8s/hardening/prod-pod-security.yaml
+###############################################################################
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: robo-stack-prod
+  labels:
+    # Pod Security Admission (PSA) labels — Kubernetes 1.25+
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+    # Project labels
+    app.kubernetes.io/part-of: robo-stack
+    environment: production
+---
+###############################################################################
+# Default deny-all ingress NetworkPolicy
+# All ingress must be explicitly allowed by additional policies.
+###############################################################################
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: robo-stack-prod
+  labels:
+    app.kubernetes.io/part-of: robo-stack
+    policy-type: baseline
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+###############################################################################
+# Default deny-all egress NetworkPolicy
+# All egress must be explicitly allowed (DNS, required services).
+###############################################################################
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: robo-stack-prod
+  labels:
+    app.kubernetes.io/part-of: robo-stack
+    policy-type: baseline
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+---
+###############################################################################
+# Allow DNS egress (required for service discovery)
+###############################################################################
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: robo-stack-prod
+  labels:
+    app.kubernetes.io/part-of: robo-stack
+    policy-type: baseline
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+###############################################################################
+# Allow intra-namespace communication only
+# Pods within robo-stack-prod can talk to each other; cross-namespace blocked.
+###############################################################################
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-intra-namespace
+  namespace: robo-stack-prod
+  labels:
+    app.kubernetes.io/part-of: robo-stack
+    policy-type: baseline
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}

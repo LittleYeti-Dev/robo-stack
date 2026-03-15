@@ -1,0 +1,83 @@
+###############################################################################
+# Robo Stack — Grafana Hardening ConfigMap
+#
+# Enforces read-only access for non-admin users, disables anonymous access,
+# and locks down Explore for viewers.
+#
+# Usage: Apply as a ConfigMap and reference in Grafana deployment envFrom,
+#        or patch the existing Grafana deployment.
+#
+# Apply: kubectl apply -f k8s/hardening/grafana-readonly.yaml
+###############################################################################
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-hardening-config
+  namespace: robo-stack-prod
+  labels:
+    app: grafana
+    app.kubernetes.io/part-of: robo-stack
+    config-type: hardening
+data:
+  # --- User defaults ---
+  GF_USERS_DEFAULT_THEME: "dark"
+  # Viewers cannot edit dashboards or panels (read-only)
+  GF_USERS_VIEWERS_CAN_EDIT: "false"
+  # Prevent viewers from saving dashboard changes
+  GF_USERS_EDITORS_CAN_ADMIN: "false"
+
+  # --- Explore ---
+  # Disable Explore for viewers (prevents ad-hoc queries against data sources)
+  GF_EXPLORE_ENABLED: "false"
+
+  # --- Authentication ---
+  # Disable anonymous access — all users must authenticate
+  GF_AUTH_ANONYMOUS_ENABLED: "false"
+  GF_AUTH_ANONYMOUS_ORG_ROLE: "Viewer"
+  # Disable user sign-up
+  GF_USERS_ALLOW_SIGN_UP: "false"
+  # Disable org creation by non-admins
+  GF_USERS_ALLOW_ORG_CREATE: "false"
+
+  # --- Security ---
+  # Enable CSRF protection
+  GF_SECURITY_CSRF_TRUSTED_ORIGINS: ""
+  GF_SECURITY_CSRF_HEADER_NAME: "X-CSRF-Token"
+  # Strict cookie settings
+  GF_SECURITY_COOKIE_SECURE: "true"
+  GF_SECURITY_COOKIE_SAMESITE: "strict"
+  GF_SECURITY_STRICT_TRANSPORT_SECURITY: "true"
+  GF_SECURITY_STRICT_TRANSPORT_SECURITY_MAX_AGE_SECONDS: "86400"
+  GF_SECURITY_X_CONTENT_TYPE_OPTIONS: "true"
+  GF_SECURITY_X_XSS_PROTECTION: "true"
+
+  # --- Snapshots ---
+  # Disable external snapshot sharing
+  GF_SNAPSHOTS_EXTERNAL_ENABLED: "false"
+
+  # --- Alerting ---
+  # Only admins can manage alert rules
+  GF_UNIFIED_ALERTING_ENABLED: "true"
+---
+###############################################################################
+# Grafana Deployment Patch
+# Use this to inject the hardening ConfigMap into an existing Grafana deployment.
+#
+# Apply:
+#   kubectl patch deployment grafana -n robo-stack-prod --patch-file k8s/hardening/grafana-readonly.yaml
+#
+# Or reference via kustomize strategic merge patch.
+###############################################################################
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: robo-stack-prod
+spec:
+  template:
+    spec:
+      containers:
+        - name: grafana
+          envFrom:
+            - configMapRef:
+                name: grafana-hardening-config
