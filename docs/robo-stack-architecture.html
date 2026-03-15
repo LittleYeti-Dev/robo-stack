@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robo Stack — System Architecture Document</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-code: #1c2128;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-red: #f85149;
+  --accent-orange: #d29922;
+  --accent-purple: #bc8cff;
+  --accent-cyan: #39d2c0;
+  --compute: #58a6ff;
+  --network: #3fb950;
+  --security: #f85149;
+  --monitoring: #d29922;
+  --ai: #bc8cff;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 16px;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+h1 { font-size: 2.2rem; color: var(--accent-blue); margin-bottom: 0.5rem; }
+h2 { font-size: 1.6rem; color: var(--accent-cyan); margin: 2.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.2rem; color: var(--accent-green); margin: 1.5rem 0 0.5rem; }
+h4 { font-size: 1rem; color: var(--accent-orange); margin: 1rem 0 0.4rem; }
+p { margin-bottom: 0.8rem; }
+a { color: var(--accent-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+li { margin-bottom: 0.3rem; }
+code { background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; color: var(--accent-orange); }
+pre { background: var(--bg-code); padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 0.8rem 0; border: 1px solid var(--border); }
+pre code { background: none; padding: 0; color: var(--text); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; }
+th { background: var(--bg-code); color: var(--accent-cyan); font-weight: 600; }
+tr:nth-child(even) { background: rgba(22,27,34,0.5); }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin: 1rem 0; }
+.badge { display: inline-block; padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+.badge-blue { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+.badge-green { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+.badge-red { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+.badge-orange { background: rgba(210,153,34,0.15); color: var(--accent-orange); }
+.badge-purple { background: rgba(188,140,255,0.15); color: var(--accent-purple); }
+.diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1.5rem 0; overflow-x: auto; }
+.diagram-title { font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.5rem; font-size: 0.95rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem; }
+.legend-item { display: flex; align-items: center; gap: 0.3rem; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 1.5rem; }
+.toc { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem 2rem; margin: 1.5rem 0; }
+.toc h3 { margin-top: 0; }
+.toc ol { counter-reset: toc; list-style: none; margin-left: 0; }
+.toc > ol > li { counter-increment: toc; margin-bottom: 0.3rem; }
+.toc > ol > li::before { content: counter(toc) ". "; color: var(--accent-cyan); font-weight: 600; }
+.meta { display: flex; flex-wrap: wrap; gap: 1.5rem; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+@media print {
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .container { max-width: 100%; padding: 0; }
+  h1, h2, h3, h4 { color: #000; }
+  .card, .diagram, .toc { border-color: #ccc; background: #f9f9f9; }
+  table { font-size: 9pt; }
+  th { background: #eee; color: #000; }
+  a { color: #000; text-decoration: underline; }
+  svg text { fill: #000 !important; }
+  svg rect, svg circle { stroke: #333 !important; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<h1>Robo Stack — System Architecture</h1>
+<p class="subtitle">Hybrid AI Development Stack &middot; Yeti Knowledge Systems</p>
+<div class="meta">
+  <span>Version 1.0</span>
+  <span>Sprint 3.1 — S3.6 Deliverable</span>
+  <span>Issue #39</span>
+  <span>Generated 2026-03-15</span>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+<h3>Table of Contents</h3>
+<ol>
+  <li><a href="#executive-summary">Executive Summary</a></li>
+  <li><a href="#infrastructure-layer">Infrastructure Layer</a></li>
+  <li><a href="#kubernetes-layer">Kubernetes Layer</a></li>
+  <li><a href="#application-layer">Application Layer</a></li>
+  <li><a href="#cicd-pipeline">CI/CD Pipeline</a></li>
+  <li><a href="#monitoring-observability">Monitoring &amp; Observability</a></li>
+  <li><a href="#security-architecture">Security Architecture</a></li>
+  <li><a href="#data-flows-trust-boundaries">Data Flows &amp; Trust Boundaries</a></li>
+  <li><a href="#technology-inventory">Technology Inventory</a></li>
+  <li><a href="#decision-log">Decision Log Summary</a></li>
+  <li><a href="#constraints-limitations">Constraints &amp; Known Limitations</a></li>
+  <li><a href="#future-roadmap">Future Roadmap</a></li>
+</ol>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1. EXECUTIVE SUMMARY -->
+<!-- ============================================================ -->
+<h2 id="executive-summary">1. Executive Summary</h2>
+
+<h3>What is Robo Stack?</h3>
+<p>Robo Stack is a <strong>hybrid AI development stack</strong> — a fully automated, security-hardened platform that provides AI-augmented software development capabilities on AWS infrastructure managed through GitOps principles. It combines a cloud-hosted Kubernetes cluster, a Claude API proxy for AI integration, browser-based development tools, and a comprehensive CI/CD pipeline into a single, reproducible environment.</p>
+
+<h3>Architecture Philosophy</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Hybrid Cloud</h4>
+    <p>Single AWS EC2 node running K3s with cloud AI services (Claude API). Local compute for workloads, cloud for intelligence.</p>
+  </div>
+  <div class="card">
+    <h4>GitOps</h4>
+    <p>GitHub Actions drives all deployments. Infrastructure is Terraform-managed. All state is version-controlled. No manual cluster operations.</p>
+  </div>
+  <div class="card">
+    <h4>Security-First</h4>
+    <p>Defense in depth: code scanning (CodeQL), secret detection (gitleaks), container scanning (Trivy), SBOM generation, branch protection, RBAC at every layer.</p>
+  </div>
+  <div class="card">
+    <h4>AI-Augmented</h4>
+    <p>Claude API proxy with rate limiting and metrics. AI code review in CI. Cloud-first model serving (EV2.1 decision: Claude API over local Ollama).</p>
+  </div>
+</div>
+
+<h3>Current State vs. Target State</h3>
+<table>
+  <tr><th>Aspect</th><th>Current (Sprint 3)</th><th>Target (Sprint 5+)</th></tr>
+  <tr><td>Compute</td><td>Single t3.xlarge node</td><td>Multi-node cluster</td></tr>
+  <tr><td>Environments</td><td>Dev deployed, staging/prod namespaces defined</td><td>Full 3-env promotion pipeline</td></tr>
+  <tr><td>Monitoring</td><td>Requirements defined (S3.2)</td><td>Prometheus + Grafana + Loki deployed</td></tr>
+  <tr><td>Secrets</td><td>GitHub Secrets + K8s Secrets</td><td>External Secrets Operator + Vault</td></tr>
+  <tr><td>AI Integration</td><td>Claude API Proxy with rate limiting</td><td>Multi-model routing, caching</td></tr>
+  <tr><td>Sprint Progress</td><td>108/124 tasks closed (87%)</td><td>Full platform operational</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- 2. INFRASTRUCTURE LAYER -->
+<!-- ============================================================ -->
+<h2 id="infrastructure-layer">2. Infrastructure Layer</h2>
+
+<h3>AWS Topology</h3>
+<p>All infrastructure is provisioned via Terraform (v1.5+, AWS provider ~5.40). The stack runs in <code>us-east-1</code> on a single EC2 instance within a purpose-built VPC.</p>
+
+<table>
+  <tr><th>Resource</th><th>Type / Config</th><th>Details</th></tr>
+  <tr><td>VPC</td><td><code>10.0.0.0/16</code></td><td>DNS support + DNS hostnames enabled</td></tr>
+  <tr><td>Public Subnet</td><td><code>10.0.1.0/24</code></td><td>Auto-assign public IP, IGW-routed</td></tr>
+  <tr><td>Private Subnet</td><td><code>10.0.2.0/24</code></td><td>Internal only, no IGW route</td></tr>
+  <tr><td>Internet Gateway</td><td>IGW</td><td>Attached to VPC, public subnet route</td></tr>
+  <tr><td>EC2 Instance</td><td><code>t3.xlarge</code></td><td>4 vCPU, 16 GB RAM, Ubuntu 22.04 LTS</td></tr>
+  <tr><td>EBS Volume</td><td><code>gp3</code>, 100 GB</td><td>Encrypted, delete on termination</td></tr>
+  <tr><td>Elastic IP</td><td>Static public IP</td><td>Survives stop/start cycles</td></tr>
+  <tr><td>IAM Role</td><td>EC2 instance profile</td><td>ECR, CloudWatch, S3, EC2 read-only</td></tr>
+  <tr><td>Security Group</td><td>7 ingress rules</td><td>SSH (restricted), HTTP/S, K8s API, kubectl proxy, VPC internal</td></tr>
+  <tr><td>CloudWatch</td><td>Log group</td><td>7-day retention</td></tr>
+</table>
+
+<h3>Security Group Rules</h3>
+<table>
+  <tr><th>Port</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr>
+  <tr><td>22</td><td>TCP</td><td><code>allowed_ssh_cidr</code> only</td><td>SSH access (restricted)</td></tr>
+  <tr><td>80</td><td>TCP</td><td><code>0.0.0.0/0</code></td><td>HTTP</td></tr>
+  <tr><td>443</td><td>TCP</td><td><code>0.0.0.0/0</code></td><td>HTTPS</td></tr>
+  <tr><td>6443</td><td>TCP</td><td><code>0.0.0.0/0</code></td><td>Kubernetes API</td></tr>
+  <tr><td>8001</td><td>TCP</td><td><code>0.0.0.0/0</code></td><td>kubectl proxy</td></tr>
+  <tr><td>All TCP</td><td>TCP</td><td><code>10.0.0.0/16</code></td><td>Internal VPC traffic</td></tr>
+  <tr><td>ICMP</td><td>ICMP</td><td><code>10.0.0.0/16</code></td><td>Internal ping</td></tr>
+  <tr><td>All</td><td>All</td><td><code>0.0.0.0/0</code> (egress)</td><td>Outbound traffic</td></tr>
+</table>
+
+<h3>Terraform Resource Map</h3>
+<table>
+  <tr><th>File</th><th>Resources Managed</th></tr>
+  <tr><td><code>main.tf</code></td><td>Provider config, backend, default tags</td></tr>
+  <tr><td><code>variables.tf</code></td><td>11 input variables with validation</td></tr>
+  <tr><td><code>vpc.tf</code></td><td>VPC, subnets (public/private), IGW, route tables, associations</td></tr>
+  <tr><td><code>security-groups.tf</code></td><td>Security group with 7 ingress + 1 egress rules</td></tr>
+  <tr><td><code>iam.tf</code></td><td>IAM role, instance profile, 4 policies (ECR, CW, S3, EC2)</td></tr>
+  <tr><td><code>ec2.tf</code></td><td>EC2 instance, EBS, Elastic IP, CloudWatch log group, AMI data source</td></tr>
+  <tr><td><code>outputs.tf</code></td><td>12 outputs (IPs, IDs, SSH command, next steps)</td></tr>
+  <tr><td><code>user-data.sh</code></td><td>Cloud-init bootstrap: Docker, K3s, kubectl, Helm, Node.js 20, Python 3, Terraform, AWS CLI, GitHub CLI</td></tr>
+</table>
+
+<h3>Cost Model</h3>
+<div class="card">
+<table>
+  <tr><th>Component</th><th>Running</th><th>Stopped</th></tr>
+  <tr><td>EC2 t3.xlarge (on-demand)</td><td>$120.96/mo</td><td>$0</td></tr>
+  <tr><td>EBS gp3 100 GB</td><td>$8.00/mo</td><td>$8.00/mo</td></tr>
+  <tr><td>Elastic IP (attached)</td><td>$3.65/mo</td><td>$3.65/mo</td></tr>
+  <tr><td>Data transfer (~50 GB)</td><td>$4.50/mo</td><td>$0</td></tr>
+  <tr><td>CloudWatch Logs</td><td>~$2.00/mo</td><td>$0</td></tr>
+  <tr><td>EIP (unattached penalty)</td><td>—</td><td>$3.65/mo</td></tr>
+  <tr><th>Total</th><th>~$155/mo</th><th>~$30-40/mo</th></tr>
+</table>
+</div>
+
+<!-- Diagram 1: AWS Infrastructure Topology -->
+<div class="diagram">
+<div class="diagram-title">Diagram 1: AWS Infrastructure Topology</div>
+<svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;">
+  <!-- VPC -->
+  <rect x="60" y="40" width="680" height="440" rx="12" fill="none" stroke="#3fb950" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="80" y="68" fill="#3fb950" font-size="14" font-weight="bold">VPC 10.0.0.0/16</text>
+  <!-- Internet -->
+  <rect x="320" y="2" width="160" height="30" rx="6" fill="#1c2128" stroke="#8b949e" stroke-width="1"/>
+  <text x="400" y="22" fill="#8b949e" font-size="12" text-anchor="middle">Internet</text>
+  <!-- IGW -->
+  <rect x="355" y="50" width="90" height="28" rx="6" fill="#1c2128" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="400" y="69" fill="#3fb950" font-size="11" text-anchor="middle">IGW</text>
+  <line x1="400" y1="32" x2="400" y2="50" stroke="#3fb950" stroke-width="1.5"/>
+  <!-- Public Subnet -->
+  <rect x="80" y="100" width="400" height="360" rx="8" fill="rgba(63,185,80,0.05)" stroke="#3fb950" stroke-width="1"/>
+  <text x="100" y="124" fill="#3fb950" font-size="12" font-weight="bold">Public Subnet 10.0.1.0/24</text>
+  <!-- Private Subnet -->
+  <rect x="510" y="100" width="210" height="360" rx="8" fill="rgba(88,166,255,0.05)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="530" y="124" fill="#58a6ff" font-size="12" font-weight="bold">Private Subnet 10.0.2.0/24</text>
+  <!-- EC2 -->
+  <rect x="110" y="150" width="340" height="280" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="2"/>
+  <text x="130" y="178" fill="#58a6ff" font-size="13" font-weight="bold">EC2: t3.xlarge</text>
+  <text x="130" y="196" fill="#8b949e" font-size="11">4 vCPU | 16 GB RAM | Ubuntu 22.04</text>
+  <!-- Elastic IP -->
+  <rect x="340" y="152" width="100" height="24" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1"/>
+  <text x="390" y="168" fill="#3fb950" font-size="10" text-anchor="middle">Elastic IP</text>
+  <line x1="400" y1="78" x2="390" y2="152" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- EBS -->
+  <rect x="130" y="210" width="130" height="40" rx="6" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="195" y="227" fill="#d29922" font-size="11" text-anchor="middle">EBS gp3</text>
+  <text x="195" y="243" fill="#8b949e" font-size="10" text-anchor="middle">100 GB encrypted</text>
+  <!-- K3s -->
+  <rect x="130" y="265" width="300" height="150" rx="6" fill="rgba(188,140,255,0.05)" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="150" y="288" fill="#bc8cff" font-size="12" font-weight="bold">K3s Cluster</text>
+  <!-- Pods inside K3s -->
+  <rect x="150" y="300" width="110" height="28" rx="4" fill="rgba(188,140,255,0.1)" stroke="#bc8cff" stroke-width="1"/>
+  <text x="205" y="318" fill="#bc8cff" font-size="10" text-anchor="middle">Claude Proxy</text>
+  <rect x="150" y="338" width="110" height="28" rx="4" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="205" y="356" fill="#58a6ff" font-size="10" text-anchor="middle">Code Server</text>
+  <rect x="280" y="300" width="110" height="28" rx="4" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="335" y="318" fill="#58a6ff" font-size="10" text-anchor="middle">Jupyter</text>
+  <rect x="280" y="338" width="110" height="28" rx="4" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="335" y="356" fill="#58a6ff" font-size="10" text-anchor="middle">Node Dev</text>
+  <rect x="150" y="376" width="240" height="28" rx="4" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="270" y="394" fill="#d29922" font-size="10" text-anchor="middle">Monitoring (Prometheus / Grafana / Loki)</text>
+  <!-- IAM -->
+  <rect x="530" y="150" width="170" height="60" rx="6" fill="rgba(248,81,73,0.08)" stroke="#f85149" stroke-width="1"/>
+  <text x="615" y="172" fill="#f85149" font-size="11" text-anchor="middle" font-weight="bold">IAM Role</text>
+  <text x="615" y="190" fill="#8b949e" font-size="9" text-anchor="middle">ECR · CW · S3 · EC2-RO</text>
+  <line x1="450" y1="180" x2="530" y2="180" stroke="#f85149" stroke-width="1" stroke-dasharray="4,3"/>
+  <!-- Security Group -->
+  <rect x="530" y="230" width="170" height="80" rx="6" fill="rgba(248,81,73,0.08)" stroke="#f85149" stroke-width="1"/>
+  <text x="615" y="252" fill="#f85149" font-size="11" text-anchor="middle" font-weight="bold">Security Group</text>
+  <text x="615" y="270" fill="#8b949e" font-size="9" text-anchor="middle">SSH:22 (restricted)</text>
+  <text x="615" y="284" fill="#8b949e" font-size="9" text-anchor="middle">HTTP:80 HTTPS:443</text>
+  <text x="615" y="298" fill="#8b949e" font-size="9" text-anchor="middle">K8s:6443 Proxy:8001</text>
+  <!-- CloudWatch -->
+  <rect x="530" y="330" width="170" height="50" rx="6" fill="rgba(210,153,34,0.08)" stroke="#d29922" stroke-width="1"/>
+  <text x="615" y="352" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">CloudWatch Logs</text>
+  <text x="615" y="370" fill="#8b949e" font-size="9" text-anchor="middle">7-day retention</text>
+  <!-- Port labels on EC2 -->
+  <text x="460" y="290" fill="#8b949e" font-size="9">:22</text>
+  <text x="460" y="304" fill="#8b949e" font-size="9">:6443</text>
+  <text x="460" y="318" fill="#8b949e" font-size="9">:8001</text>
+</svg>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#58a6ff"></div> Compute</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#3fb950"></div> Network</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f85149"></div> Security</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#d29922"></div> Monitoring</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#bc8cff"></div> AI / K8s</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 3. KUBERNETES LAYER -->
+<!-- ============================================================ -->
+<h2 id="kubernetes-layer">3. Kubernetes Layer</h2>
+
+<h3>K3s Cluster Architecture</h3>
+<p>Robo Stack uses <strong>K3s</strong> (lightweight Kubernetes) on a single EC2 node, selected per evaluation gate EV1.1 over Minikube. K3s provides a production-grade Kubernetes API with lower resource overhead (~512 MB RAM vs. Minikube's ~1.1 GB), built-in Traefik ingress, and a single-binary deployment model ideal for the single-operator constraint.</p>
+
+<h3>Namespace Strategy</h3>
+<table>
+  <tr><th>Namespace</th><th>Environment</th><th>Deployment Trigger</th><th>Purpose</th></tr>
+  <tr><td><code>robo-stack</code></td><td>Development</td><td>Push to <code>main</code> (auto)</td><td>Active development, latest builds</td></tr>
+  <tr><td><code>robo-stack-staging</code></td><td>Staging</td><td>Git tag <code>v*-rc*</code></td><td>Pre-production validation</td></tr>
+  <tr><td><code>robo-stack-prod</code></td><td>Production</td><td>Manual approval gate</td><td>Stable, verified releases</td></tr>
+</table>
+
+<h3>Resource Allocation</h3>
+<table>
+  <tr><th>Budget</th><th>CPU</th><th>Memory</th><th>% of Node</th></tr>
+  <tr><td>Node total capacity</td><td>4000m</td><td>16 Gi</td><td>100%</td></tr>
+  <tr><td>K3s system overhead</td><td>~500m</td><td>~512 Mi</td><td>~6%</td></tr>
+  <tr><td>Application workloads</td><td>~700m</td><td>~640 Mi</td><td>~8%</td></tr>
+  <tr><td>Monitoring stack (planned)</td><td>~450m</td><td>~1088 Mi</td><td>~11%</td></tr>
+  <tr><td><strong>Available headroom</strong></td><td><strong>~2350m</strong></td><td><strong>~13.8 Gi</strong></td><td><strong>~75%</strong></td></tr>
+</table>
+
+<h3>Pod Inventory</h3>
+<table>
+  <tr><th>Pod</th><th>Namespace</th><th>CPU Req/Lim</th><th>Mem Req/Lim</th><th>Port</th></tr>
+  <tr><td>claude-proxy</td><td>robo-stack</td><td>100m / 500m</td><td>128 Mi / 256 Mi</td><td>8000</td></tr>
+  <tr><td>code-server</td><td>robo-stack</td><td>100m / 500m</td><td>128 Mi / 512 Mi</td><td>8443</td></tr>
+  <tr><td>jupyter</td><td>robo-stack</td><td>100m / 500m</td><td>128 Mi / 512 Mi</td><td>8888</td></tr>
+  <tr><td>node-dev</td><td>robo-stack</td><td>100m / 500m</td><td>128 Mi / 512 Mi</td><td>3000</td></tr>
+  <tr><td>prometheus <span class="badge badge-orange">planned</span></td><td>robo-stack</td><td>100m / 500m</td><td>256 Mi / 512 Mi</td><td>9090</td></tr>
+  <tr><td>grafana <span class="badge badge-orange">planned</span></td><td>robo-stack</td><td>100m / 250m</td><td>128 Mi / 256 Mi</td><td>3000</td></tr>
+  <tr><td>loki <span class="badge badge-orange">planned</span></td><td>robo-stack</td><td>100m / 250m</td><td>128 Mi / 256 Mi</td><td>3100</td></tr>
+  <tr><td>promtail <span class="badge badge-orange">planned</span></td><td>robo-stack</td><td>50m / 100m</td><td>64 Mi / 128 Mi</td><td>—</td></tr>
+  <tr><td>node-exporter <span class="badge badge-orange">planned</span></td><td>robo-stack</td><td>50m / 100m</td><td>32 Mi / 64 Mi</td><td>9100</td></tr>
+</table>
+
+<!-- Diagram 2: K8s Namespace & Pod Layout -->
+<div class="diagram">
+<div class="diagram-title">Diagram 2: Kubernetes Namespace &amp; Pod Layout</div>
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;">
+  <!-- K3s Node -->
+  <rect x="20" y="10" width="760" height="380" rx="10" fill="none" stroke="#bc8cff" stroke-width="2"/>
+  <text x="40" y="35" fill="#bc8cff" font-size="14" font-weight="bold">K3s Node (t3.xlarge)</text>
+  <!-- Dev namespace -->
+  <rect x="40" y="50" width="340" height="320" rx="8" fill="rgba(63,185,80,0.05)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="60" y="75" fill="#3fb950" font-size="12" font-weight="bold">robo-stack (dev)</text>
+  <!-- Dev pods -->
+  <rect x="60" y="90" width="140" height="50" rx="5" fill="rgba(188,140,255,0.12)" stroke="#bc8cff" stroke-width="1"/>
+  <text x="130" y="112" fill="#bc8cff" font-size="11" text-anchor="middle">claude-proxy</text>
+  <text x="130" y="128" fill="#8b949e" font-size="9" text-anchor="middle">:8000 · FastAPI</text>
+  <rect x="220" y="90" width="140" height="50" rx="5" fill="rgba(88,166,255,0.12)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="290" y="112" fill="#58a6ff" font-size="11" text-anchor="middle">code-server</text>
+  <text x="290" y="128" fill="#8b949e" font-size="9" text-anchor="middle">:8443 · VS Code</text>
+  <rect x="60" y="155" width="140" height="50" rx="5" fill="rgba(88,166,255,0.12)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="130" y="177" fill="#58a6ff" font-size="11" text-anchor="middle">jupyter</text>
+  <text x="130" y="193" fill="#8b949e" font-size="9" text-anchor="middle">:8888 · Notebook</text>
+  <rect x="220" y="155" width="140" height="50" rx="5" fill="rgba(88,166,255,0.12)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="290" y="177" fill="#58a6ff" font-size="11" text-anchor="middle">node-dev</text>
+  <text x="290" y="193" fill="#8b949e" font-size="9" text-anchor="middle">:3000 · Node.js</text>
+  <!-- Monitoring group -->
+  <rect x="55" y="218" width="310" height="140" rx="6" fill="rgba(210,153,34,0.05)" stroke="#d29922" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="75" y="240" fill="#d29922" font-size="11" font-weight="bold">Monitoring Stack (S3.2 planned)</text>
+  <rect x="70" y="252" width="90" height="36" rx="4" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="115" y="274" fill="#d29922" font-size="9" text-anchor="middle">Prometheus</text>
+  <rect x="170" y="252" width="80" height="36" rx="4" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="210" y="274" fill="#d29922" font-size="9" text-anchor="middle">Grafana</text>
+  <rect x="260" y="252" width="80" height="36" rx="4" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="300" y="274" fill="#d29922" font-size="9" text-anchor="middle">Loki</text>
+  <rect x="70" y="298" width="120" height="36" rx="4" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="130" y="320" fill="#d29922" font-size="9" text-anchor="middle">Promtail (DS)</text>
+  <rect x="200" y="298" width="140" height="36" rx="4" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="270" y="320" fill="#d29922" font-size="9" text-anchor="middle">Node Exporter (DS)</text>
+  <!-- Staging namespace -->
+  <rect x="400" y="50" width="180" height="140" rx="8" fill="rgba(210,153,34,0.05)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="420" y="75" fill="#d29922" font-size="12" font-weight="bold">robo-stack-staging</text>
+  <text x="490" y="110" fill="#8b949e" font-size="11" text-anchor="middle">Tag-triggered</text>
+  <text x="490" y="128" fill="#8b949e" font-size="11" text-anchor="middle">v*-rc* deploys</text>
+  <text x="490" y="160" fill="#8b949e" font-size="10" text-anchor="middle">(mirrors dev pods)</text>
+  <!-- Prod namespace -->
+  <rect x="600" y="50" width="160" height="140" rx="8" fill="rgba(248,81,73,0.05)" stroke="#f85149" stroke-width="1.5"/>
+  <text x="620" y="75" fill="#f85149" font-size="12" font-weight="bold">robo-stack-prod</text>
+  <text x="680" y="110" fill="#8b949e" font-size="11" text-anchor="middle">Manual gate</text>
+  <text x="680" y="128" fill="#8b949e" font-size="11" text-anchor="middle">approval required</text>
+  <text x="680" y="160" fill="#8b949e" font-size="10" text-anchor="middle">(mirrors dev pods)</text>
+  <!-- K8s system -->
+  <rect x="400" y="220" width="360" height="80" rx="6" fill="rgba(88,166,255,0.05)" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="420" y="245" fill="#58a6ff" font-size="11" font-weight="bold">kube-system</text>
+  <text x="420" y="265" fill="#8b949e" font-size="10">Traefik Ingress · CoreDNS · Metrics Server</text>
+  <text x="420" y="282" fill="#8b949e" font-size="10">K3s system components (~500m CPU, 512Mi RAM)</text>
+</svg>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#3fb950"></div> Dev namespace</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#d29922"></div> Staging / Monitoring</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f85149"></div> Production</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#58a6ff"></div> System</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#bc8cff"></div> AI services</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 4. APPLICATION LAYER -->
+<!-- ============================================================ -->
+<h2 id="application-layer">4. Application Layer</h2>
+
+<h3>Claude API Proxy</h3>
+<div class="card">
+  <p><span class="badge badge-purple">AI</span> FastAPI-based reverse proxy for the Anthropic Claude API (S2.3 deliverable).</p>
+  <ul>
+    <li><strong>Runtime:</strong> Python 3.11 + Uvicorn</li>
+    <li><strong>Rate Limiting:</strong> 10 requests/minute per client IP (configurable via ConfigMap)</li>
+    <li><strong>Retry Logic:</strong> Exponential backoff, max 3 retries on transient failures</li>
+    <li><strong>Endpoints:</strong>
+      <ul>
+        <li><code>POST /v1/messages</code> — Proxy to Anthropic API with validation</li>
+        <li><code>GET /health</code> — Liveness/readiness probe target</li>
+        <li><code>GET /metrics</code> — Request count, token usage, error rates</li>
+      </ul>
+    </li>
+    <li><strong>Security:</strong> API key injected via K8s Secret (<code>claude-api-credentials</code>), CORS enabled</li>
+    <li><strong>Probes:</strong> Liveness (30s delay, 30s period), Readiness (20s delay, 10s period)</li>
+  </ul>
+</div>
+
+<h3>Development Tools</h3>
+<div class="grid-2">
+  <div class="card">
+    <h4>Code Server <span class="badge badge-blue">:8443</span></h4>
+    <p>Browser-based VS Code instance. Full IDE with terminal, extensions, and Git integration. Accessible remotely over HTTPS.</p>
+  </div>
+  <div class="card">
+    <h4>Jupyter Notebook <span class="badge badge-blue">:8888</span></h4>
+    <p>Data science and prototyping environment. Python kernel with access to cluster services for experimentation.</p>
+  </div>
+  <div class="card">
+    <h4>Node Dev <span class="badge badge-blue">:3000</span></h4>
+    <p>Node.js 20 development container. Hot-reload capable for frontend/API development.</p>
+  </div>
+</div>
+
+<h3>Service Connectivity</h3>
+<p>All services communicate within the <code>robo-stack</code> namespace via ClusterIP services. Traefik (K3s built-in) handles ingress routing. The Claude Proxy is the only service that makes external API calls (to <code>api.anthropic.com</code>).</p>
+
+<!-- Diagram 3: Application Component Interaction -->
+<div class="diagram">
+<div class="diagram-title">Diagram 3: Application Component Interaction</div>
+<svg viewBox="0 0 800 340" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;">
+  <!-- External -->
+  <rect x="20" y="20" width="120" height="40" rx="6" fill="#1c2128" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="80" y="45" fill="#8b949e" font-size="12" text-anchor="middle">Developer</text>
+  <!-- Traefik -->
+  <rect x="200" y="10" width="140" height="50" rx="6" fill="rgba(63,185,80,0.1)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="270" y="32" fill="#3fb950" font-size="11" text-anchor="middle" font-weight="bold">Traefik Ingress</text>
+  <text x="270" y="48" fill="#8b949e" font-size="9" text-anchor="middle">:80 / :443</text>
+  <line x1="140" y1="40" x2="200" y2="35" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arrow-g)"/>
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrow-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3fb950"/></marker>
+    <marker id="arrow-b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#58a6ff"/></marker>
+    <marker id="arrow-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#bc8cff"/></marker>
+    <marker id="arrow-o" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#d29922"/></marker>
+  </defs>
+  <!-- Services -->
+  <rect x="80" y="100" width="150" height="55" rx="6" fill="rgba(188,140,255,0.1)" stroke="#bc8cff" stroke-width="1.5"/>
+  <text x="155" y="122" fill="#bc8cff" font-size="12" text-anchor="middle" font-weight="bold">Claude Proxy</text>
+  <text x="155" y="140" fill="#8b949e" font-size="10" text-anchor="middle">ClusterIP :8000</text>
+  <rect x="280" y="100" width="150" height="55" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="355" y="122" fill="#58a6ff" font-size="12" text-anchor="middle" font-weight="bold">Code Server</text>
+  <text x="355" y="140" fill="#8b949e" font-size="10" text-anchor="middle">ClusterIP :8443</text>
+  <rect x="480" y="100" width="150" height="55" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="555" y="122" fill="#58a6ff" font-size="12" text-anchor="middle" font-weight="bold">Jupyter</text>
+  <text x="555" y="140" fill="#8b949e" font-size="10" text-anchor="middle">ClusterIP :8888</text>
+  <rect x="660" y="100" width="120" height="55" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="720" y="122" fill="#58a6ff" font-size="12" text-anchor="middle" font-weight="bold">Node Dev</text>
+  <text x="720" y="140" fill="#8b949e" font-size="10" text-anchor="middle">ClusterIP :3000</text>
+  <!-- Traefik to services -->
+  <line x1="230" y1="60" x2="155" y2="100" stroke="#3fb950" stroke-width="1" marker-end="url(#arrow-g)"/>
+  <line x1="270" y1="60" x2="355" y2="100" stroke="#3fb950" stroke-width="1" marker-end="url(#arrow-g)"/>
+  <line x1="310" y1="60" x2="555" y2="100" stroke="#3fb950" stroke-width="1" marker-end="url(#arrow-g)"/>
+  <line x1="330" y1="60" x2="720" y2="100" stroke="#3fb950" stroke-width="1" marker-end="url(#arrow-g)"/>
+  <!-- External API -->
+  <rect x="40" y="220" width="190" height="50" rx="6" fill="rgba(188,140,255,0.08)" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="135" y="242" fill="#bc8cff" font-size="11" text-anchor="middle" font-weight="bold">api.anthropic.com</text>
+  <text x="135" y="258" fill="#8b949e" font-size="9" text-anchor="middle">Claude API (external)</text>
+  <line x1="155" y1="155" x2="135" y2="220" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#arrow-p)"/>
+  <!-- K8s Secrets -->
+  <rect x="300" y="220" width="160" height="45" rx="6" fill="rgba(248,81,73,0.08)" stroke="#f85149" stroke-width="1"/>
+  <text x="380" y="240" fill="#f85149" font-size="11" text-anchor="middle" font-weight="bold">K8s Secrets</text>
+  <text x="380" y="256" fill="#8b949e" font-size="9" text-anchor="middle">claude-api-credentials</text>
+  <line x1="155" y1="155" x2="380" y2="220" stroke="#f85149" stroke-width="1" stroke-dasharray="3,3"/>
+  <!-- ConfigMap -->
+  <rect x="500" y="220" width="160" height="45" rx="6" fill="rgba(210,153,34,0.08)" stroke="#d29922" stroke-width="1"/>
+  <text x="580" y="240" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">ConfigMap</text>
+  <text x="580" y="256" fill="#8b949e" font-size="9" text-anchor="middle">rate-limit · max-retries</text>
+  <line x1="155" y1="155" x2="580" y2="220" stroke="#d29922" stroke-width="1" stroke-dasharray="3,3"/>
+  <!-- Metrics -->
+  <rect x="300" y="290" width="160" height="40" rx="6" fill="rgba(210,153,34,0.08)" stroke="#d29922" stroke-width="1"/>
+  <text x="380" y="314" fill="#d29922" font-size="11" text-anchor="middle">Prometheus scrape</text>
+  <line x1="155" y1="155" x2="300" y2="300" stroke="#d29922" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow-o)"/>
+</svg>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#3fb950"></div> Ingress routing</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#bc8cff"></div> AI / API calls</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f85149"></div> Secrets</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#d29922"></div> Config / Metrics</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5. CI/CD PIPELINE -->
+<!-- ============================================================ -->
+<h2 id="cicd-pipeline">5. CI/CD Pipeline</h2>
+
+<p>Robo Stack uses <strong>GitHub Actions</strong> as its GitOps engine, selected over ArgoCD per evaluation gate EV3.1 (score: 4.00 vs. 2.95). GitHub Actions imposes zero cluster resource overhead — critical for the single-node constraint.</p>
+
+<h3>Workflow Inventory</h3>
+<table>
+  <tr><th>#</th><th>Workflow</th><th>File</th><th>Trigger</th><th>Purpose</th></tr>
+  <tr><td>1</td><td>CI Lint &amp; Security</td><td><code>ci.yml</code></td><td>Push/PR to main</td><td>ShellCheck, yamllint, Trivy filesystem scan</td></tr>
+  <tr><td>2</td><td>CodeQL Analysis</td><td><code>codeql.yml</code></td><td>Push/PR + weekly</td><td>Semantic code analysis (Python); SQL injection, XSS, hardcoded secrets</td></tr>
+  <tr><td>3</td><td>AI Code Review</td><td><code>ai-code-review.yml</code></td><td>Pull requests</td><td>Automated AI-powered code review</td></tr>
+  <tr><td>4</td><td>Docker Build</td><td><code>docker-build.yml</code></td><td>Push/PR</td><td>Multi-platform image build, push to GHCR</td></tr>
+  <tr><td>5</td><td>Deploy Local</td><td><code>deploy-local.yml</code></td><td>Push to main</td><td>Apply K8s manifests to dev namespace</td></tr>
+  <tr><td>6</td><td>Markdown Lint</td><td><code>markdown-lint.yml</code></td><td>Markdown changes</td><td>markdownlint + link checking</td></tr>
+  <tr><td>7</td><td>Security Scan</td><td><code>security-scan.yml</code></td><td>Push/PR + weekly</td><td>gitleaks, Trivy, SBOM generation (CycloneDX + SPDX)</td></tr>
+</table>
+
+<h3>Deployment Strategy per Environment</h3>
+<table>
+  <tr><th>Environment</th><th>Trigger</th><th>Strategy</th><th>Rollback</th></tr>
+  <tr><td>Dev</td><td>Auto on merge to <code>main</code></td><td>Rolling update, latest image</td><td><code>kubectl rollout undo</code></td></tr>
+  <tr><td>Staging</td><td>Git tag <code>v*-rc*</code></td><td>Rolling update, pinned image tag</td><td>Re-tag previous RC</td></tr>
+  <tr><td>Prod</td><td>Manual approval gate</td><td>Rolling update, pinned image SHA</td><td>Deploy previous SHA</td></tr>
+</table>
+
+<h3>Branch Protection</h3>
+<ul>
+  <li>PR required for all merges to <code>main</code></li>
+  <li>All CI checks must pass (lint, security, CodeQL)</li>
+  <li>Code owner review required (<code>@LittleYeti-Dev</code> via CODEOWNERS)</li>
+  <li>Squash merge enforced for clean history</li>
+  <li>Concurrency: one pipeline run per branch (cancel in-progress)</li>
+</ul>
+
+<!-- Diagram 4: CI/CD Pipeline Flow -->
+<div class="diagram">
+<div class="diagram-title">Diagram 4: CI/CD Pipeline Flow</div>
+<svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;">
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#58a6ff"/></marker>
+    <marker id="arr-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#f85149"/></marker>
+    <marker id="arr-grn" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3fb950"/></marker>
+  </defs>
+  <!-- Feature branch -->
+  <rect x="20" y="30" width="130" height="40" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="85" y="55" fill="#58a6ff" font-size="11" text-anchor="middle">Feature Branch</text>
+  <!-- PR -->
+  <rect x="180" y="30" width="100" height="40" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="230" y="55" fill="#58a6ff" font-size="11" text-anchor="middle">Pull Request</text>
+  <line x1="150" y1="50" x2="180" y2="50" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- CI Checks -->
+  <rect x="180" y="90" width="230" height="120" rx="6" fill="rgba(248,81,73,0.05)" stroke="#f85149" stroke-width="1"/>
+  <text x="295" y="112" fill="#f85149" font-size="11" text-anchor="middle" font-weight="bold">CI Checks (all must pass)</text>
+  <text x="200" y="132" fill="#8b949e" font-size="10">ShellCheck + yamllint</text>
+  <text x="200" y="150" fill="#8b949e" font-size="10">CodeQL (Python)</text>
+  <text x="200" y="168" fill="#8b949e" font-size="10">Trivy filesystem scan</text>
+  <text x="200" y="186" fill="#8b949e" font-size="10">gitleaks secret detection</text>
+  <text x="200" y="204" fill="#8b949e" font-size="10">AI code review</text>
+  <line x1="230" y1="70" x2="295" y2="90" stroke="#f85149" stroke-width="1" marker-end="url(#arr-r)"/>
+  <!-- Merge to main -->
+  <rect x="450" y="30" width="120" height="40" rx="6" fill="rgba(63,185,80,0.1)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="510" y="48" fill="#3fb950" font-size="11" text-anchor="middle" font-weight="bold">Merge to</text>
+  <text x="510" y="63" fill="#3fb950" font-size="11" text-anchor="middle" font-weight="bold">main</text>
+  <line x1="280" y1="50" x2="450" y2="50" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arr-grn)"/>
+  <!-- Deploy dev -->
+  <rect x="450" y="100" width="120" height="45" rx="6" fill="rgba(63,185,80,0.12)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="510" y="118" fill="#3fb950" font-size="11" text-anchor="middle" font-weight="bold">Deploy Dev</text>
+  <text x="510" y="136" fill="#8b949e" font-size="9" text-anchor="middle">auto (rolling)</text>
+  <line x1="510" y1="70" x2="510" y2="100" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arr-grn)"/>
+  <!-- Tag -->
+  <rect x="610" y="100" width="120" height="45" rx="6" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="670" y="118" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">Git Tag</text>
+  <text x="670" y="136" fill="#8b949e" font-size="9" text-anchor="middle">v*-rc*</text>
+  <line x1="570" y1="122" x2="610" y2="122" stroke="#d29922" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Deploy staging -->
+  <rect x="610" y="170" width="120" height="45" rx="6" fill="rgba(210,153,34,0.12)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="670" y="188" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">Deploy Staging</text>
+  <text x="670" y="206" fill="#8b949e" font-size="9" text-anchor="middle">tag-triggered</text>
+  <line x1="670" y1="145" x2="670" y2="170" stroke="#d29922" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Manual gate -->
+  <rect x="610" y="240" width="120" height="45" rx="6" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="2"/>
+  <text x="670" y="258" fill="#f85149" font-size="11" text-anchor="middle" font-weight="bold">Manual Gate</text>
+  <text x="670" y="275" fill="#8b949e" font-size="9" text-anchor="middle">approval required</text>
+  <line x1="670" y1="215" x2="670" y2="240" stroke="#f85149" stroke-width="1.5" marker-end="url(#arr-r)"/>
+  <!-- Deploy prod -->
+  <rect x="450" y="240" width="120" height="45" rx="6" fill="rgba(248,81,73,0.12)" stroke="#f85149" stroke-width="1.5"/>
+  <text x="510" y="258" fill="#f85149" font-size="11" text-anchor="middle" font-weight="bold">Deploy Prod</text>
+  <text x="510" y="275" fill="#8b949e" font-size="9" text-anchor="middle">pinned image SHA</text>
+  <line x1="610" y1="262" x2="570" y2="262" stroke="#f85149" stroke-width="1.5" marker-end="url(#arr-r)"/>
+  <!-- Docker build -->
+  <rect x="450" y="170" width="120" height="45" rx="6" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="510" y="188" fill="#58a6ff" font-size="11" text-anchor="middle" font-weight="bold">Docker Build</text>
+  <text x="510" y="206" fill="#8b949e" font-size="9" text-anchor="middle">GHCR push</text>
+  <line x1="510" y1="145" x2="510" y2="170" stroke="#58a6ff" stroke-width="1" marker-end="url(#arr)"/>
+</svg>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#58a6ff"></div> Feature / Build</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#3fb950"></div> Dev (auto)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#d29922"></div> Staging (tag)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f85149"></div> Prod (manual)</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 6. MONITORING & OBSERVABILITY -->
+<!-- ============================================================ -->
+<h2 id="monitoring-observability">6. Monitoring &amp; Observability</h2>
+
+<p><span class="badge badge-orange">Planned — S3.2</span> The monitoring stack is architecturally designed and resource-budgeted but not yet deployed.</p>
+
+<h3>Stack Components</h3>
+<table>
+  <tr><th>Component</th><th>Role</th><th>CPU</th><th>Memory</th><th>Retention</th></tr>
+  <tr><td>Prometheus</td><td>Metrics collection &amp; storage</td><td>100m / 500m</td><td>256 Mi / 512 Mi</td><td>15 days</td></tr>
+  <tr><td>Grafana</td><td>Dashboards &amp; visualization</td><td>100m / 250m</td><td>128 Mi / 256 Mi</td><td>—</td></tr>
+  <tr><td>Loki</td><td>Log aggregation</td><td>100m / 250m</td><td>128 Mi / 256 Mi</td><td>7–30 days</td></tr>
+  <tr><td>Promtail</td><td>Log shipping (DaemonSet)</td><td>50m / 100m</td><td>64 Mi / 128 Mi</td><td>—</td></tr>
+  <tr><td>Node Exporter</td><td>Host metrics (DaemonSet)</td><td>50m / 100m</td><td>32 Mi / 64 Mi</td><td>—</td></tr>
+  <tr><td><strong>Total</strong></td><td></td><td><strong>450m</strong></td><td><strong>1088 Mi</strong></td><td></td></tr>
+</table>
+
+<h3>Alert Rules</h3>
+<table>
+  <tr><th>Alert</th><th>Severity</th><th>Condition</th></tr>
+  <tr><td>PodCrashLooping</td><td><span class="badge badge-red">Critical</span></td><td>Pod restart count &gt; 5 in 10 min</td></tr>
+  <tr><td>HighCPU</td><td><span class="badge badge-orange">Warning</span></td><td>Node CPU &gt; 85% for 5 min</td></tr>
+  <tr><td>HighMemory</td><td><span class="badge badge-orange">Warning</span></td><td>Node memory &gt; 90% for 5 min</td></tr>
+  <tr><td>DiskAlmostFull</td><td><span class="badge badge-red">Critical</span></td><td>Disk usage &gt; 90%</td></tr>
+  <tr><td>APITokenBurn</td><td><span class="badge badge-orange">Warning</span></td><td>Claude API token spend exceeds threshold</td></tr>
+</table>
+
+<h3>Dashboard Strategy</h3>
+<ol>
+  <li><strong>Cluster Overview</strong> — Node utilization, pod status, PVC usage, network I/O</li>
+  <li><strong>Application Health</strong> — Claude Proxy request rate, latency percentiles (p50/p95/p99), token usage, error rates</li>
+  <li><strong>Deployment Tracking</strong> — Deploy frequency, rollback count, image version drift</li>
+</ol>
+
+<h3>Log Retention by Environment</h3>
+<table>
+  <tr><th>Environment</th><th>Retention</th></tr>
+  <tr><td>Dev</td><td>7 days</td></tr>
+  <tr><td>Staging</td><td>14 days</td></tr>
+  <tr><td>Prod</td><td>30 days</td></tr>
+</table>
+
+<!-- Diagram 5: Monitoring Data Flow -->
+<div class="diagram">
+<div class="diagram-title">Diagram 5: Monitoring Data Flow</div>
+<svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;">
+  <defs>
+    <marker id="mo" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#d29922"/></marker>
+  </defs>
+  <!-- Sources -->
+  <text x="60" y="30" fill="#8b949e" font-size="12" text-anchor="middle" font-weight="bold">Sources</text>
+  <rect x="10" y="45" width="100" height="35" rx="5" fill="rgba(188,140,255,0.1)" stroke="#bc8cff" stroke-width="1"/>
+  <text x="60" y="67" fill="#bc8cff" font-size="10" text-anchor="middle">Claude Proxy</text>
+  <rect x="10" y="90" width="100" height="35" rx="5" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="60" y="112" fill="#58a6ff" font-size="10" text-anchor="middle">Code Server</text>
+  <rect x="10" y="135" width="100" height="35" rx="5" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="60" y="157" fill="#58a6ff" font-size="10" text-anchor="middle">Jupyter</text>
+  <rect x="10" y="180" width="100" height="35" rx="5" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="60" y="202" fill="#58a6ff" font-size="10" text-anchor="middle">Node Dev</text>
+  <rect x="10" y="230" width="100" height="35" rx="5" fill="rgba(63,185,80,0.1)" stroke="#3fb950" stroke-width="1"/>
+  <text x="60" y="252" fill="#3fb950" font-size="10" text-anchor="middle">K3s Node</text>
+  <!-- Collection -->
+  <text x="250" y="30" fill="#d29922" font-size="12" text-anchor="middle" font-weight="bold">Collection</text>
+  <rect x="180" y="55" width="140" height="55" rx="6" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="250" y="78" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">Prometheus</text>
+  <text x="250" y="96" fill="#8b949e" font-size="9" text-anchor="middle">scrape /metrics</text>
+  <rect x="180" y="130" width="140" height="55" rx="6" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="250" y="153" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">Promtail</text>
+  <text x="250" y="171" fill="#8b949e" font-size="9" text-anchor="middle">ship logs</text>
+  <rect x="180" y="205" width="140" height="55" rx="6" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="250" y="228" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">Node Exporter</text>
+  <text x="250" y="246" fill="#8b949e" font-size="9" text-anchor="middle">host metrics</text>
+  <!-- Arrows source to collection -->
+  <line x1="110" y1="62" x2="180" y2="75" stroke="#d29922" stroke-width="1" marker-end="url(#mo)"/>
+  <line x1="110" y1="107" x2="180" y2="85" stroke="#d29922" stroke-width="1" marker-end="url(#mo)"/>
+  <line x1="110" y1="152" x2="180" y2="155" stroke="#d29922" stroke-width="1" marker-end="url(#mo)"/>
+  <line x1="110" y1="197" x2="180" y2="165" stroke="#d29922" stroke-width="1" marker-end="url(#mo)"/>
+  <line x1="110" y1="247" x2="180" y2="232" stroke="#d29922" stroke-width="1" marker-end="url(#mo)"/>
+  <!-- Storage -->
+  <text x="460" y="30" fill="#d29922" font-size="12" text-anchor="middle" font-weight="bold">Storage</text>
+  <rect x="390" y="55" width="140" height="55" rx="6" fill="rgba(210,153,34,0.12)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="460" y="78" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">Prometheus TSDB</text>
+  <text x="460" y="96" fill="#8b949e" font-size="9" text-anchor="middle">15-day retention</text>
+  <rect x="390" y="130" width="140" height="55" rx="6" fill="rgba(210,153,34,0.12)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="460" y="153" fill="#d29922" font-size="11" text-anchor="middle" font-weight="bold">Loki</text>
+  <text x="460" y="171" fill="#8b949e" font-size="9" text-anchor="middle">7–30 day retention</text>
+  <!-- Arrows collection to storage -->
+  <line x1="320" y1="82" x2="390" y2="82" stroke="#d29922" stroke-width="1.5" marker-end="url(#mo)"/>
+  <line x1="320" y1="232" x2="390" y2="82" stroke="#d29922" stroke-width="1" marker-end="url(#mo)"/>
+  <line x1="320" y1="157" x2="390" y2="157" stroke="#d29922" stroke-width="1.5" marker-end="url(#mo)"/>
+  <!-- Visualization -->
+  <text x="670" y="30" fill="#d29922" font-size="12" text-anchor="middle" font-weight="bold">Visualization</text>
+  <rect x="590" y="55" width="160" height="140" rx="6" fill="rgba(210,153,34,0.12)" stroke="#d29922" stroke-width="2"/>
+  <text x="670" y="80" fill="#d29922" font-size="13" text-anchor="middle" font-weight="bold">Grafana</text>
+  <text x="670" y="102" fill="#8b949e" font-size="10" text-anchor="middle">Cluster Overview</text>
+  <text x="670" y="120" fill="#8b949e" font-size="10" text-anchor="middle">Application Health</text>
+  <text x="670" y="138" fill="#8b949e" font-size="10" text-anchor="middle">Deploy Tracking</text>
+  <text x="670" y="160" fill="#8b949e" font-size="10" text-anchor="middle">:3000</text>
+  <!-- Alert -->
+  <rect x="590" y="220" width="160" height="50" rx="6" fill="rgba(248,81,73,0.08)" stroke="#f85149" stroke-width="1.5"/>
+  <text x="670" y="242" fill="#f85149" font-size="11" text-anchor="middle" font-weight="bold">Alertmanager</text>
+  <text x="670" y="260" fill="#8b949e" font-size="9" text-anchor="middle">Critical / Warning / Info</text>
+  <!-- Arrows storage to viz -->
+  <line x1="530" y1="82" x2="590" y2="100" stroke="#d29922" stroke-width="1.5" marker-end="url(#mo)"/>
+  <line x1="530" y1="157" x2="590" y2="130" stroke="#d29922" stroke-width="1.5" marker-end="url(#mo)"/>
+  <line x1="530" y1="82" x2="590" y2="240" stroke="#f85149" stroke-width="1" stroke-dasharray="4,3"/>
+</svg>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#d29922"></div> Monitoring flow</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#bc8cff"></div> AI service</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#58a6ff"></div> Dev tools</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f85149"></div> Alerts</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7. SECURITY ARCHITECTURE -->
+<!-- ============================================================ -->
+<h2 id="security-architecture">7. Security Architecture</h2>
+
+<p>Security is implemented as <strong>defense in depth</strong> across the entire SDLC, from code authoring through runtime. The security baseline is documented in <code>security-baseline.md</code> and aligns with OWASP Top 10, CWE/SANS Top 25, and NIST Cybersecurity Framework guidelines.</p>
+
+<h3>Code Scanning</h3>
+<table>
+  <tr><th>Tool</th><th>What It Detects</th><th>When</th><th>Action on Findings</th></tr>
+  <tr><td>CodeQL</td><td>SQL injection, XSS, command injection, hardcoded secrets</td><td>Push, PR, weekly schedule</td><td>Block merge (CRITICAL/HIGH)</td></tr>
+  <tr><td>gitleaks</td><td>Secrets, API keys, tokens in code</td><td>Push, PR, pre-commit hook</td><td>Block merge</td></tr>
+  <tr><td>ShellCheck</td><td>Shell script errors and vulnerabilities</td><td>Push, PR</td><td>Block merge (error severity)</td></tr>
+</table>
+
+<h3>Container Scanning</h3>
+<table>
+  <tr><th>Tool</th><th>What It Detects</th><th>When</th><th>Action on Findings</th></tr>
+  <tr><td>Trivy (filesystem)</td><td>OS &amp; library vulnerabilities in repo</td><td>Push, PR</td><td>SARIF upload to GitHub Security</td></tr>
+  <tr><td>Trivy (image)</td><td>Container image vulnerabilities</td><td>Docker build workflow</td><td>CRITICAL/HIGH blocks, MEDIUM/LOW flags</td></tr>
+  <tr><td>SBOM (syft)</td><td>Software Bill of Materials</td><td>Security scan workflow</td><td>CycloneDX + SPDX generation</td></tr>
+</table>
+
+<h3>Secret Management</h3>
+<table>
+  <tr><th>Layer</th><th>Mechanism</th><th>Scope</th></tr>
+  <tr><td>Local development</td><td><code>.env</code> file (git-ignored)</td><td>Developer workstation</td></tr>
+  <tr><td>CI/CD pipeline</td><td>GitHub Secrets (encrypted)</td><td>GitHub Actions workflows</td></tr>
+  <tr><td>Kubernetes runtime</td><td>K8s Secrets (base64, etcd-encrypted)</td><td>Pod environment injection</td></tr>
+  <tr><td>Future (planned)</td><td>External Secrets Operator + HashiCorp Vault</td><td>Centralized rotation</td></tr>
+</table>
+
+<h3>Access Control</h3>
+<table>
+  <tr><th>System</th><th>Model</th><th>Details</th></tr>
+  <tr><td>GitHub</td><td>RBAC + CODEOWNERS</td><td><code>@LittleYeti-Dev</code> as sole owner; branch protection requires review</td></tr>
+  <tr><td>AWS IAM</td><td>Least-privilege policies</td><td>EC2 role with scoped ECR, CloudWatch, S3, EC2-RO permissions</td></tr>
+  <tr><td>Kubernetes</td><td>K8s RBAC</td><td>Namespace-scoped service accounts, no cluster-admin for apps</td></tr>
+  <tr><td>EC2 SSH</td><td>CIDR-restricted</td><td><code>allowed_ssh_cidr</code> variable — no 0.0.0.0/0 SSH</td></tr>
+  <tr><td>EC2 Metadata</td><td>IMDSv2 required</td><td><code>http_tokens = required</code> — blocks SSRF-based credential theft</td></tr>
+</table>
+
+<h3>Dependency Management</h3>
+<p><strong>Dependabot</strong> runs weekly scans across 4 ecosystems: npm, pip, Docker, GitHub Actions. PRs are auto-created with grouped updates. Security advisories trigger immediate PRs.</p>
+
+<h3>Incident Response</h3>
+<table>
+  <tr><th>Phase</th><th>SLA</th><th>Action</th></tr>
+  <tr><td>Acknowledgment</td><td>24 hours</td><td>Confirm receipt, assign severity</td></tr>
+  <tr><td>Investigation</td><td>72 hours</td><td>Root cause analysis, impact assessment</td></tr>
+  <tr><td>Fix (Critical)</td><td>7 days</td><td>Patch, deploy, verify</td></tr>
+  <tr><td>Fix (High)</td><td>14 days</td><td>Patch, deploy, verify</td></tr>
+</table>
+
+<!-- Diagram 6: Security Controls by Layer -->
+<div class="diagram">
+<div class="diagram-title">Diagram 6: Security Controls by Layer</div>
+<svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;">
+  <!-- Code layer -->
+  <rect x="20" y="20" width="760" height="60" rx="8" fill="rgba(248,81,73,0.06)" stroke="#f85149" stroke-width="1.5"/>
+  <text x="40" y="45" fill="#f85149" font-size="12" font-weight="bold">Code Layer</text>
+  <text x="40" y="65" fill="#8b949e" font-size="10">CodeQL · gitleaks · ShellCheck · Dependabot · Branch Protection · CODEOWNERS · AI Code Review</text>
+  <!-- Build layer -->
+  <rect x="20" y="95" width="760" height="60" rx="8" fill="rgba(210,153,34,0.06)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="40" y="120" fill="#d29922" font-size="12" font-weight="bold">Build Layer (CI/CD)</text>
+  <text x="40" y="140" fill="#8b949e" font-size="10">Trivy (filesystem + image) · SBOM (CycloneDX + SPDX) · GitHub Secrets · Docker multi-stage · Concurrency locks</text>
+  <!-- Infrastructure layer -->
+  <rect x="20" y="170" width="760" height="60" rx="8" fill="rgba(63,185,80,0.06)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="40" y="195" fill="#3fb950" font-size="12" font-weight="bold">Infrastructure Layer (AWS)</text>
+  <text x="40" y="215" fill="#8b949e" font-size="10">VPC isolation · Security Groups (SSH restricted) · IAM least-privilege · IMDSv2 · EBS encryption · CloudWatch audit</text>
+  <!-- Runtime layer -->
+  <rect x="20" y="245" width="760" height="60" rx="8" fill="rgba(88,166,255,0.06)" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="40" y="270" fill="#58a6ff" font-size="12" font-weight="bold">Runtime Layer (K8s)</text>
+  <text x="40" y="290" fill="#8b949e" font-size="10">K8s RBAC · Namespace isolation · Resource limits · Liveness/readiness probes · K8s Secrets · Network policies (planned)</text>
+  <!-- Data layer -->
+  <rect x="20" y="320" width="760" height="30" rx="8" fill="rgba(188,140,255,0.06)" stroke="#bc8cff" stroke-width="1"/>
+  <text x="40" y="341" fill="#bc8cff" font-size="12" font-weight="bold">Data Layer</text>
+  <text x="300" y="341" fill="#8b949e" font-size="10">API key injection via Secrets · CORS · Rate limiting · No PII storage</text>
+  <!-- Arrow -->
+  <text x="750" y="55" fill="#f85149" font-size="20" text-anchor="middle">&#x2193;</text>
+  <text x="750" y="130" fill="#d29922" font-size="20" text-anchor="middle">&#x2193;</text>
+  <text x="750" y="205" fill="#3fb950" font-size="20" text-anchor="middle">&#x2193;</text>
+  <text x="750" y="280" fill="#58a6ff" font-size="20" text-anchor="middle">&#x2193;</text>
+</svg>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#f85149"></div> Code scanning</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#d29922"></div> Build security</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#3fb950"></div> Infrastructure</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#58a6ff"></div> Runtime</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#bc8cff"></div> Data</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 8. DATA FLOWS & TRUST BOUNDARIES -->
+<!-- ============================================================ -->
+<h2 id="data-flows-trust-boundaries">8. Data Flows &amp; Trust Boundaries</h2>
+
+<p>This section maps all data flows between system components and identifies trust boundaries — <strong>critical input for the Overwatch threat model (Issue #40)</strong>.</p>
+
+<h3>Trust Boundary Definitions</h3>
+<table>
+  <tr><th>Boundary</th><th>Classification</th><th>Description</th></tr>
+  <tr><td><span class="badge badge-red">TB-1: Internet → AWS</span></td><td>External</td><td>Public internet to VPC edge. Controlled by Security Group + IGW. All inbound traffic filtered.</td></tr>
+  <tr><td><span class="badge badge-orange">TB-2: EC2 Host → K3s Cluster</span></td><td>Internal</td><td>Host OS to Kubernetes API. kubectl access, kubelet, container runtime boundary.</td></tr>
+  <tr><td><span class="badge badge-purple">TB-3: K3s → External APIs</span></td><td>External</td><td>Cluster to Anthropic API. HTTPS egress, API key in transit. Rate-limited by proxy.</td></tr>
+  <tr><td><span class="badge badge-blue">TB-4: GitHub → EC2</span></td><td>External</td><td>CI/CD deployment path. GitHub Actions runner → SSH/kubectl to cluster. GitHub Secrets in transit.</td></tr>
+  <tr><td><span class="badge badge-green">TB-5: Namespace → Namespace</span></td><td>Internal</td><td>Cross-namespace K8s traffic. dev → staging → prod isolation. No network policies yet (planned).</td></tr>
+  <tr><td><span class="badge badge-red">TB-6: Developer → GitHub</span></td><td>External</td><td>Git push with PAT authentication. Branch protection enforces review gates.</td></tr>
+</table>
+
+<h3>Data Flow Inventory</h3>
+<table>
+  <tr><th>Flow</th><th>From</th><th>To</th><th>Protocol</th><th>Auth</th><th>Trust Boundary</th></tr>
+  <tr><td>Code push</td><td>Developer</td><td>GitHub</td><td>HTTPS (Git)</td><td>PAT token</td><td>TB-6</td></tr>
+  <tr><td>CI trigger</td><td>GitHub</td><td>GH Actions runner</td><td>Internal</td><td>GITHUB_TOKEN</td><td>—</td></tr>
+  <tr><td>K8s deploy</td><td>GH Actions</td><td>EC2 K3s API</td><td>HTTPS :6443</td><td>kubeconfig</td><td>TB-4</td></tr>
+  <tr><td>Docker push</td><td>GH Actions</td><td>GHCR</td><td>HTTPS</td><td>GITHUB_TOKEN</td><td>—</td></tr>
+  <tr><td>Image pull</td><td>K3s</td><td>GHCR</td><td>HTTPS</td><td>imagePullSecret</td><td>TB-3</td></tr>
+  <tr><td>API proxy</td><td>Claude Proxy</td><td>api.anthropic.com</td><td>HTTPS</td><td>API key (Secret)</td><td>TB-3</td></tr>
+  <tr><td>User → IDE</td><td>Developer</td><td>Code Server</td><td>HTTPS :8443</td><td>Password</td><td>TB-1</td></tr>
+  <tr><td>User → Jupyter</td><td>Developer</td><td>Jupyter</td><td>HTTPS :8888</td><td>Token</td><td>TB-1</td></tr>
+  <tr><td>SSH access</td><td>Developer</td><td>EC2</td><td>SSH :22</td><td>SSH key + CIDR</td><td>TB-1</td></tr>
+  <tr><td>Metrics scrape</td><td>Prometheus</td><td>All pods</td><td>HTTP /metrics</td><td>Internal (ClusterIP)</td><td>TB-5</td></tr>
+  <tr><td>Log ship</td><td>Promtail</td><td>Loki</td><td>HTTP</td><td>Internal (ClusterIP)</td><td>TB-5</td></tr>
+  <tr><td>SARIF upload</td><td>GH Actions</td><td>GitHub Security</td><td>HTTPS</td><td>GITHUB_TOKEN</td><td>—</td></tr>
+</table>
+
+<!-- Diagram 7: Trust Boundary Map -->
+<div class="diagram">
+<div class="diagram-title">Diagram 7: Trust Boundary Map (Threat Model Input)</div>
+<svg viewBox="0 0 820 460" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;">
+  <defs>
+    <marker id="ta" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#8b949e"/></marker>
+  </defs>
+  <!-- TB-1: External boundary -->
+  <rect x="10" y="10" width="800" height="440" rx="10" fill="none" stroke="#f85149" stroke-width="2.5" stroke-dasharray="10,5"/>
+  <text x="30" y="35" fill="#f85149" font-size="12" font-weight="bold">TB-1: Internet → AWS (External Boundary)</text>
+
+  <!-- External actors -->
+  <rect x="30" y="60" width="120" height="40" rx="6" fill="#1c2128" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="90" y="84" fill="#e6edf3" font-size="11" text-anchor="middle">Developer</text>
+
+  <rect x="30" y="120" width="120" height="40" rx="6" fill="#1c2128" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="90" y="144" fill="#e6edf3" font-size="11" text-anchor="middle">GitHub</text>
+
+  <!-- TB-6 -->
+  <line x1="90" y1="100" x2="90" y2="120" stroke="#8b949e" stroke-width="1.5" marker-end="url(#ta)"/>
+  <text x="105" y="115" fill="#f85149" font-size="8">TB-6</text>
+
+  <!-- TB-4: GitHub to EC2 -->
+  <rect x="30" y="180" width="120" height="40" rx="6" fill="#1c2128" stroke="#d29922" stroke-width="1"/>
+  <text x="90" y="204" fill="#d29922" font-size="11" text-anchor="middle">GH Actions</text>
+  <line x1="90" y1="160" x2="90" y2="180" stroke="#8b949e" stroke-width="1" marker-end="url(#ta)"/>
+
+  <!-- AWS VPC box -->
+  <rect x="200" y="55" width="590" height="380" rx="10" fill="none" stroke="#3fb950" stroke-width="2"/>
+  <text x="220" y="78" fill="#3fb950" font-size="11" font-weight="bold">AWS VPC (10.0.0.0/16)</text>
+
+  <!-- Security Group -->
+  <rect x="215" y="90" width="560" height="330" rx="8" fill="none" stroke="#f85149" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="235" y="110" fill="#f85149" font-size="10" font-weight="bold">Security Group (ingress filter)</text>
+
+  <!-- TB-2: EC2 Host to K3s -->
+  <rect x="230" y="120" width="530" height="285" rx="8" fill="none" stroke="#d29922" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="250" y="140" fill="#d29922" font-size="10" font-weight="bold">TB-2: EC2 Host → K3s Cluster</text>
+
+  <!-- K8s cluster -->
+  <rect x="245" y="150" width="500" height="240" rx="6" fill="rgba(88,166,255,0.03)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="265" y="170" fill="#58a6ff" font-size="10" font-weight="bold">K3s Cluster (kubeadm boundary)</text>
+
+  <!-- Dev namespace -->
+  <rect x="260" y="180" width="230" height="190" rx="5" fill="rgba(63,185,80,0.04)" stroke="#3fb950" stroke-width="1"/>
+  <text x="280" y="198" fill="#3fb950" font-size="10" font-weight="bold">robo-stack (dev)</text>
+  <!-- Pods -->
+  <rect x="275" y="208" width="95" height="30" rx="4" fill="rgba(188,140,255,0.1)" stroke="#bc8cff" stroke-width="1"/>
+  <text x="322" y="227" fill="#bc8cff" font-size="9" text-anchor="middle">Claude Proxy</text>
+  <rect x="380" y="208" width="95" height="30" rx="4" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="427" y="227" fill="#58a6ff" font-size="9" text-anchor="middle">Code Server</text>
+  <rect x="275" y="248" width="95" height="30" rx="4" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="322" y="267" fill="#58a6ff" font-size="9" text-anchor="middle">Jupyter</text>
+  <rect x="380" y="248" width="95" height="30" rx="4" fill="rgba(88,166,255,0.1)" stroke="#58a6ff" stroke-width="1"/>
+  <text x="427" y="267" fill="#58a6ff" font-size="9" text-anchor="middle">Node Dev</text>
+  <!-- Monitoring -->
+  <rect x="275" y="290" width="200" height="30" rx="4" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="375" y="309" fill="#d29922" font-size="9" text-anchor="middle">Monitoring (Prom/Grafana/Loki)</text>
+  <!-- K8s Secrets -->
+  <rect x="275" y="330" width="200" height="28" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="375" y="348" fill="#f85149" font-size="9" text-anchor="middle">K8s Secrets (API keys, tokens)</text>
+
+  <!-- TB-5: Namespace boundary -->
+  <rect x="510" y="180" width="220" height="100" rx="5" fill="rgba(210,153,34,0.04)" stroke="#d29922" stroke-width="1"/>
+  <text x="530" y="198" fill="#d29922" font-size="10" font-weight="bold">TB-5: Other Namespaces</text>
+  <rect x="525" y="210" width="90" height="25" rx="3" fill="rgba(210,153,34,0.08)" stroke="#d29922" stroke-width="0.5"/>
+  <text x="570" y="227" fill="#d29922" font-size="8" text-anchor="middle">staging</text>
+  <rect x="625" y="210" width="90" height="25" rx="3" fill="rgba(248,81,73,0.08)" stroke="#f85149" stroke-width="0.5"/>
+  <text x="670" y="227" fill="#f85149" font-size="8" text-anchor="middle">prod</text>
+  <text x="620" y="265" fill="#8b949e" font-size="8" text-anchor="middle">No network policies yet</text>
+
+  <!-- External API (TB-3) -->
+  <rect x="550" y="310" width="180" height="50" rx="6" fill="rgba(188,140,255,0.08)" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="640" y="332" fill="#bc8cff" font-size="10" text-anchor="middle" font-weight="bold">api.anthropic.com</text>
+  <text x="640" y="350" fill="#8b949e" font-size="8" text-anchor="middle">TB-3: K3s → External API</text>
+
+  <!-- Connections -->
+  <line x1="150" y1="80" x2="275" y2="222" stroke="#8b949e" stroke-width="1" marker-end="url(#ta)"/>
+  <text x="195" y="145" fill="#8b949e" font-size="8" transform="rotate(35,195,145)">SSH/HTTPS</text>
+  <line x1="150" y1="200" x2="245" y2="300" stroke="#d29922" stroke-width="1" marker-end="url(#ta)"/>
+  <text x="175" y="260" fill="#d29922" font-size="8">TB-4 deploy</text>
+  <line x1="370" y1="222" x2="550" y2="325" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#ta)"/>
+  <text x="480" y="280" fill="#bc8cff" font-size="8">TB-3 HTTPS</text>
+</svg>
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#f85149"></div> External trust boundary</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#d29922"></div> Internal boundary</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#3fb950"></div> Network perimeter</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#58a6ff"></div> K8s cluster</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#bc8cff"></div> External API</div>
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 9. TECHNOLOGY INVENTORY -->
+<!-- ============================================================ -->
+<h2 id="technology-inventory">9. Technology Inventory</h2>
+
+<table>
+  <tr><th>Component</th><th>Version</th><th>Purpose</th><th>Layer</th></tr>
+  <tr><td>Ubuntu</td><td>22.04 LTS</td><td>Host operating system</td><td>Infrastructure</td></tr>
+  <tr><td>AWS EC2</td><td>t3.xlarge</td><td>Compute instance</td><td>Infrastructure</td></tr>
+  <tr><td>Terraform</td><td>&ge; 1.5</td><td>Infrastructure as Code</td><td>Infrastructure</td></tr>
+  <tr><td>AWS Provider</td><td>~5.40</td><td>Terraform AWS integration</td><td>Infrastructure</td></tr>
+  <tr><td>K3s</td><td>Latest</td><td>Lightweight Kubernetes</td><td>Orchestration</td></tr>
+  <tr><td>kubectl</td><td>1.32+</td><td>Kubernetes CLI</td><td>Orchestration</td></tr>
+  <tr><td>Helm</td><td>3.x</td><td>K8s package manager</td><td>Orchestration</td></tr>
+  <tr><td>Traefik</td><td>K3s built-in</td><td>Ingress controller</td><td>Network</td></tr>
+  <tr><td>Docker</td><td>Latest</td><td>Container runtime</td><td>Runtime</td></tr>
+  <tr><td>Podman</td><td>Latest</td><td>Rootless container engine</td><td>Runtime</td></tr>
+  <tr><td>Python</td><td>3.11</td><td>Claude Proxy runtime</td><td>Application</td></tr>
+  <tr><td>FastAPI</td><td>Latest</td><td>API framework (Claude Proxy)</td><td>Application</td></tr>
+  <tr><td>Uvicorn</td><td>Latest</td><td>ASGI server</td><td>Application</td></tr>
+  <tr><td>Node.js</td><td>20.x LTS</td><td>JavaScript runtime</td><td>Application</td></tr>
+  <tr><td>Code Server</td><td>Latest</td><td>Browser-based VS Code</td><td>Application</td></tr>
+  <tr><td>Jupyter</td><td>Latest</td><td>Notebook environment</td><td>Application</td></tr>
+  <tr><td>GitHub Actions</td><td>v4 runners</td><td>CI/CD automation</td><td>Pipeline</td></tr>
+  <tr><td>CodeQL</td><td>v3</td><td>Semantic code analysis</td><td>Security</td></tr>
+  <tr><td>gitleaks</td><td>Latest</td><td>Secret detection</td><td>Security</td></tr>
+  <tr><td>Trivy</td><td>Latest</td><td>Vulnerability scanning</td><td>Security</td></tr>
+  <tr><td>syft</td><td>Latest</td><td>SBOM generation</td><td>Security</td></tr>
+  <tr><td>Dependabot</td><td>v2</td><td>Dependency updates</td><td>Security</td></tr>
+  <tr><td>Prometheus</td><td>Planned</td><td>Metrics collection</td><td>Monitoring</td></tr>
+  <tr><td>Grafana</td><td>Planned</td><td>Dashboards</td><td>Monitoring</td></tr>
+  <tr><td>Loki</td><td>Planned</td><td>Log aggregation</td><td>Monitoring</td></tr>
+  <tr><td>Alertmanager</td><td>Planned</td><td>Alert routing</td><td>Monitoring</td></tr>
+  <tr><td>AWS CLI</td><td>v2</td><td>AWS management</td><td>Tooling</td></tr>
+  <tr><td>GitHub CLI</td><td>Latest</td><td>GitHub management</td><td>Tooling</td></tr>
+  <tr><td>Git LFS</td><td>Latest</td><td>Large file storage</td><td>Tooling</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- 10. DECISION LOG -->
+<!-- ============================================================ -->
+<h2 id="decision-log">10. Decision Log Summary</h2>
+
+<table>
+  <tr><th>ID</th><th>Decision</th><th>Chosen</th><th>Rejected</th><th>Score</th><th>Rationale</th></tr>
+  <tr><td>EV1.1</td><td>Kubernetes distribution</td><td>K3s</td><td>Minikube</td><td>—</td><td>Lower resource overhead (~512 MB vs ~1.1 GB), production-grade, built-in Traefik, single-binary</td></tr>
+  <tr><td>EV2.1</td><td>Model serving</td><td>Cloud (Claude API)</td><td>Local (Ollama)</td><td>4.5 vs 2.3</td><td>No GPU on t3.xlarge; 50x latency improvement; 5x quality; $3-5/mo vs infrastructure overhead</td></tr>
+  <tr><td>EV3.1</td><td>GitOps engine</td><td>GitHub Actions</td><td>ArgoCD</td><td>4.0 vs 2.95</td><td>Zero cluster resource overhead (~700 Mi RAM saved); simpler for single-operator model</td></tr>
+</table>
+
+<p>Full decision documents are in the <code>docs/</code> directory: <code>ev2.1-model-serving-eval.md</code>, <code>ev3.1-gitops-eval.md</code>.</p>
+
+<!-- ============================================================ -->
+<!-- 11. CONSTRAINTS & LIMITATIONS -->
+<!-- ============================================================ -->
+<h2 id="constraints-limitations">11. Constraints &amp; Known Limitations</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Single-Node Constraint</h4>
+    <p>All workloads run on one <code>t3.xlarge</code> (4 vCPU, 16 GB). No HA, no pod rescheduling on failure. Node failure = full outage. Ceiling is ~75% headroom today.</p>
+  </div>
+  <div class="card">
+    <h4>No GPU</h4>
+    <p><code>t3.xlarge</code> has no GPU. Local model inference is not viable. All AI workloads depend on the Claude API (cloud). This is a cost vs. latency trade-off accepted in EV2.1.</p>
+  </div>
+  <div class="card">
+    <h4>Manual Secret Rotation</h4>
+    <p>Secrets are stored in GitHub Secrets and K8s Secrets. No automated rotation. External Secrets Operator + Vault is planned but not deployed.</p>
+  </div>
+  <div class="card">
+    <h4>Single-Developer Model</h4>
+    <p>Architecture assumes a sole operator (<code>@LittleYeti-Dev</code>). No on-call rotation, no team-based RBAC, no multi-tenant isolation. Branch protection is meaningful but review gates are self-approved.</p>
+  </div>
+  <div class="card">
+    <h4>No Network Policies</h4>
+    <p>Cross-namespace traffic in K8s is unrestricted. Network policies are planned but not implemented. This is a gap for the prod namespace isolation requirement.</p>
+  </div>
+  <div class="card">
+    <h4>Open K8s API / kubectl Proxy</h4>
+    <p>Ports 6443 and 8001 are open to <code>0.0.0.0/0</code> in the security group. Authentication is required but exposure increases attack surface. CIDR restriction recommended.</p>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 12. FUTURE ROADMAP -->
+<!-- ============================================================ -->
+<h2 id="future-roadmap">12. Future Roadmap</h2>
+
+<table>
+  <tr><th>Epic</th><th>Initiative</th><th>Impact</th></tr>
+  <tr><td>E4</td><td>Monitoring deployment (Prometheus, Grafana, Loki)</td><td>Operational visibility, alerting, SLO tracking</td></tr>
+  <tr><td>E4</td><td>Network policies</td><td>Namespace isolation, prod hardening</td></tr>
+  <tr><td>E5</td><td>Multi-cluster architecture</td><td>HA, geographic distribution, blast radius reduction</td></tr>
+  <tr><td>E5</td><td>External Secrets Operator + Vault</td><td>Automated secret rotation, centralized management</td></tr>
+  <tr><td>E5</td><td>Distributed tracing (OpenTelemetry)</td><td>Cross-service request tracing</td></tr>
+  <tr><td>E6</td><td>Multi-model AI routing</td><td>Route to Claude/GPT/Ollama based on task requirements</td></tr>
+  <tr><td>E6</td><td>Horizontal Pod Autoscaler</td><td>Auto-scale based on CPU/memory/custom metrics</td></tr>
+  <tr><td>E6</td><td>Ingress TLS with cert-manager</td><td>Automated Let's Encrypt certificate management</td></tr>
+</table>
+
+<!-- FOOTER -->
+<hr style="border-color: var(--border); margin: 3rem 0 1rem;">
+<p style="color: var(--text-muted); font-size: 0.85rem;">
+  Robo Stack Architecture Document v1.0 &middot; S3.6 Deliverable &middot; Issue #39<br>
+  Generated for Overwatch threat model input (Issue #40)<br>
+  &copy; 2026 Yeti Knowledge Systems
+</p>
+
+</div>
+</body>
+</html>
