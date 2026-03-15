@@ -1,0 +1,93 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Deployment Replicas (Desired vs Available)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "kube_deployment_spec_replicas{namespace=~\"robo-stack.*\"}",
+          "legendFormat": "{{ deployment }} desired",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        },
+        {
+          "expr": "kube_deployment_status_replicas_available{namespace=~\"robo-stack.*\"}",
+          "legendFormat": "{{ deployment }} available",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ]
+    },
+    {
+      "title": "Deployment Updated Replicas",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_updated{namespace=~\"robo-stack.*\"}",
+          "legendFormat": "{{ deployment }} updated",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ]
+    },
+    {
+      "title": "Container Image Versions",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "kube_pod_container_info{namespace=~\"robo-stack.*\"}",
+          "format": "table",
+          "instant": true,
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "includeByName": { "namespace": true, "pod": true, "container": true, "image": true },
+            "indexByName": {}
+          }
+        }
+      ]
+    },
+    {
+      "title": "Pod Restarts",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "increase(kube_pod_container_status_restarts_total{namespace=~\"robo-stack.*\"}[1h])",
+          "legendFormat": "{{ pod }}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ]
+    },
+    {
+      "title": "Deployment Metadata",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "kube_configmap_info{namespace=~\"robo-stack.*\",configmap=~\"deployment-metadata.*\"}",
+          "format": "table",
+          "instant": true,
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": ["robo-stack", "deployments"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "Deployment Tracking",
+  "uid": "robo-deploy-tracking",
+  "version": 1
+}

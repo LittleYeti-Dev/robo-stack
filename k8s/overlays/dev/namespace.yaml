@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: robo-stack
+  labels:
+    app.kubernetes.io/part-of: robo-stack
+    env: dev

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claude-proxy-config
+data:
+  LOG_LEVEL: "DEBUG"
+  RATE_LIMIT: "10"

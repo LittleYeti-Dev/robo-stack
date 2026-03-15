@@ -1,0 +1,296 @@
+###############################################################################
+# Deploy to Production — Robo Stack
+# Manual workflow dispatch with explicit confirmation gate. Uses a
+# staging-validated image (no rebuild) and requires environment approval.
+###############################################################################
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (semver from staging)'
+        required: true
+        type: string
+      confirm:
+        description: 'Type DEPLOY to confirm'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  deployments: write
+  issues: write
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/claude-proxy
+  NAMESPACE: robo-stack-prod
+  IMAGE_TAG: ${{ inputs.image_tag }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Validate, deploy, and monitor
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      # -- Validate confirmation input ----------------------------------------
+      - name: Validate deployment confirmation
+        run: |
+          if [ "${{ inputs.confirm }}" != "DEPLOY" ]; then
+            echo "::error::Deployment not confirmed. You must type DEPLOY in the confirm field."
+            echo "Received: '${{ inputs.confirm }}'"
+            exit 1
+          fi
+          echo "Deployment confirmed. Proceeding with image tag: ${{ env.IMAGE_TAG }}"
+
+      # -- Checkout (for kustomize overlays) ----------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -- Verify staging image exists ----------------------------------------
+      - name: Verify staging-validated image exists
+        run: |
+          echo "Verifying image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} exists..."
+          docker manifest inspect "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" > /dev/null 2>&1 || {
+            echo "::error::Image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} not found in GHCR."
+            echo "Ensure this version was successfully deployed to staging first."
+            exit 1
+          }
+          echo "Image verified."
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+
+      # -- Configure kubectl --------------------------------------------------
+      - name: Configure kubectl
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG_PROD }}" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      # -- Capture pre-deploy state -------------------------------------------
+      - name: Capture pre-deploy state
+        id: pre_deploy
+        run: |
+          CURRENT_IMAGE=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} \
+            -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "none")
+          echo "current_image=${CURRENT_IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "Previous image: ${CURRENT_IMAGE}"
+
+      # -- Deploy via kustomize -----------------------------------------------
+      - name: Deploy to production cluster
+        run: |
+          cd k8s/overlays/prod/
+          kustomize edit set image claude-proxy=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          kustomize build . | kubectl apply -f -
+
+      # -- Deployment metadata ConfigMap --------------------------------------
+      - name: Create deployment metadata ConfigMap
+        run: |
+          kubectl create configmap deployment-metadata \
+            --namespace=${{ env.NAMESPACE }} \
+            --from-literal=deployed-at="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --from-literal=image-tag="${{ env.IMAGE_TAG }}" \
+            --from-literal=git-sha="${{ github.sha }}" \
+            --from-literal=deployed-by="${{ github.actor }}" \
+            --from-literal=environment="production" \
+            --from-literal=previous-image="${{ steps.pre_deploy.outputs.current_image }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # -- Wait for rollout ---------------------------------------------------
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/claude-proxy \
+            -n ${{ env.NAMESPACE }} \
+            --timeout=300s
+
+      # -- Production smoke tests ---------------------------------------------
+      - name: Production smoke tests
+        run: |
+          SERVICE_URL=$(kubectl get svc claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -z "$SERVICE_URL" ]; then
+            SERVICE_URL=$(kubectl get svc claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.clusterIP}')
+          fi
+
+          echo "=== Health Check ==="
+          for i in 1 2 3 4 5; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://${SERVICE_URL}/health" || true)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "PASS: Health endpoint returned HTTP 200"
+              break
+            fi
+            if [ "$i" -eq 5 ]; then
+              echo "FAIL: Health check failed after 5 attempts (last HTTP $HTTP_CODE)"
+              exit 1
+            fi
+            echo "Attempt $i: HTTP $HTTP_CODE — retrying in 5s..."
+            sleep 5
+          done
+
+          echo "=== Replica Check ==="
+          READY=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.status.readyReplicas}')
+          DESIRED=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}')
+          if [ "$READY" != "$DESIRED" ]; then
+            echo "FAIL: Ready replicas ($READY) != desired ($DESIRED)"
+            exit 1
+          fi
+          echo "PASS: All $READY/$DESIRED replicas ready"
+
+          echo "=== Pod Restart Check ==="
+          RESTARTS=$(kubectl get pods -l app=claude-proxy -n ${{ env.NAMESPACE }} \
+            -o jsonpath='{.items[*].status.containerStatuses[0].restartCount}')
+          for r in $RESTARTS; do
+            if [ "$r" -gt 0 ]; then
+              echo "WARN: Pod has $r restarts — investigate"
+            fi
+          done
+
+          echo "=== All production smoke tests passed ==="
+
+      # -- Post-deploy monitoring (5-minute soak) -----------------------------
+      - name: Post-deploy monitoring period
+        run: |
+          echo "Starting 5-minute post-deploy monitoring window..."
+          sleep 300
+
+          echo "=== Checking for alerts ==="
+          PROMETHEUS_URL=$(kubectl get svc prometheus -n monitoring -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "")
+          if [ -n "$PROMETHEUS_URL" ]; then
+            ALERTS=$(curl -s "http://${PROMETHEUS_URL}:9090/api/v1/alerts" | \
+              python3 -c "import sys,json; d=json.load(sys.stdin); alerts=[a for a in d.get('data',{}).get('alerts',[]) if a.get('state')=='firing' and 'robo-stack' in str(a.get('labels',{}))]; print(len(alerts))" 2>/dev/null || echo "0")
+            if [ "$ALERTS" -gt 0 ]; then
+              echo "::error::$ALERTS active Prometheus alert(s) detected for robo-stack"
+              exit 1
+            fi
+            echo "No active alerts detected."
+          else
+            echo "Prometheus not available — skipping alert check."
+          fi
+
+          echo "=== Final replica health check ==="
+          READY=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.status.readyReplicas}')
+          DESIRED=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}')
+          if [ "$READY" != "$DESIRED" ]; then
+            echo "FAIL: Replicas degraded during soak period ($READY/$DESIRED)"
+            exit 1
+          fi
+          echo "PASS: All replicas healthy after 5-minute soak period"
+
+      # -- Create GitHub Deployment record ------------------------------------
+      - name: Mark deployment successful
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: 'production',
+              auto_merge: false,
+              required_contexts: [],
+              description: `Production deploy ${process.env.IMAGE_TAG}`
+            });
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              description: `Production deployment of ${process.env.IMAGE_TAG} succeeded`,
+              environment_url: 'https://robo-stack.internal'
+            });
+
+  # ---------------------------------------------------------------------------
+  # Automatic rollback and critical issue on failure
+  # ---------------------------------------------------------------------------
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    timeout-minutes: 10
+
+    steps:
+      - name: Configure kubectl
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG_PROD }}" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+      - name: Rollback deployment
+        run: |
+          echo "CRITICAL: Rolling back production deployment of ${{ env.IMAGE_TAG }}..."
+          kubectl rollout undo deployment/claude-proxy -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/claude-proxy -n ${{ env.NAMESPACE }} --timeout=180s
+          echo "Production rollback complete."
+
+          echo "=== Post-rollback verification ==="
+          READY=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.status.readyReplicas}')
+          DESIRED=$(kubectl get deployment claude-proxy -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.replicas}')
+          echo "Replicas: $READY/$DESIRED ready"
+
+      - name: Create critical failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `CRITICAL: Production deployment failed: ${process.env.IMAGE_TAG}`,
+              labels: ['deployment-failure', 'production', 'critical'],
+              body: [
+                `## CRITICAL: Production Deployment Failure`,
+                ``,
+                `| Detail | Value |`,
+                `|--------|-------|`,
+                `| **Image Tag** | \`${process.env.IMAGE_TAG}\` |`,
+                `| **Git SHA** | \`${context.sha}\` |`,
+                `| **Actor** | @${context.actor} |`,
+                `| **Workflow Run** | [View logs](${runUrl}) |`,
+                `| **Timestamp** | ${new Date().toISOString()} |`,
+                ``,
+                `### What happened`,
+                `The production deployment of \`${process.env.IMAGE_TAG}\` failed. An **automatic rollback** was executed.`,
+                ``,
+                `### Immediate actions required`,
+                `1. Verify the rollback is healthy:`,
+                `   \`\`\``,
+                `   kubectl get pods -n ${process.env.NAMESPACE}`,
+                `   kubectl get deployment claude-proxy -n ${process.env.NAMESPACE}`,
+                `   \`\`\``,
+                `2. Review the [workflow logs](${runUrl})`,
+                `3. Check pod logs: \`kubectl logs -l app=claude-proxy -n ${process.env.NAMESPACE} --tail=200\``,
+                `4. Investigate root cause before re-attempting deployment`,
+                ``,
+                `### Do NOT re-deploy until this issue is resolved and closed.`,
+              ].join('\n')
+            });
+
+      - name: Mark deployment failed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployments = await github.rest.repos.listDeployments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment: 'production',
+              per_page: 1
+            });
+            if (deployments.data.length > 0) {
+              await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: deployments.data[0].id,
+                state: 'failure',
+                description: `Production deployment of ${process.env.IMAGE_TAG} failed — automatic rollback executed`
+              });
+            }

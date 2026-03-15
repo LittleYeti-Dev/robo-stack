@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter
+  labels:
+    app: jupyter
+    app.kubernetes.io/part-of: robo-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter
+  template:
+    metadata:
+      labels:
+        app: jupyter
+    spec:
+      containers:
+        - name: jupyter
+          image: jupyter/minimal-notebook:latest
+          ports:
+            - containerPort: 8888
+              name: http
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          volumeMounts:
+            - name: notebooks
+              mountPath: /home/jovyan/work
+      volumes:
+        - name: notebooks
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jupyter
+  labels:
+    app: jupyter
+spec:
+  type: ClusterIP
+  selector:
+    app: jupyter
+  ports:
+    - port: 8888
+      targetPort: 8888
+      name: http
