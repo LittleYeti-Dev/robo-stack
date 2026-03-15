@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claude-proxy-config
+  labels:
+    app: claude-proxy
+data:
+  LOG_LEVEL: "INFO"
+  RATE_LIMIT: "20"
+  NODE_ENV: "production"
+  PORT: "8080"

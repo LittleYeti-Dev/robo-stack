@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-dev
+  labels:
+    app: node-dev
+    app.kubernetes.io/part-of: robo-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-dev
+  template:
+    metadata:
+      labels:
+        app: node-dev
+    spec:
+      containers:
+        - name: node-dev
+          image: node:20-slim
+          command: ["sleep", "infinity"]
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 250m
+              memory: 512Mi
+          volumeMounts:
+            - name: workspace
+              mountPath: /app
+      volumes:
+        - name: workspace
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-dev
+  labels:
+    app: node-dev
+spec:
+  type: ClusterIP
+  selector:
+    app: node-dev
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http
