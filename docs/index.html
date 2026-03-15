@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robo Stack — Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #58a6ff;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #8b949e;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #f0f6fc;
+            font-size: 1.3rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1.2rem;
+            margin-bottom: 0.8rem;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #58a6ff; }
+        .card a {
+            color: #58a6ff;
+            text-decoration: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .card a:hover { text-decoration: underline; }
+        .card .desc {
+            color: #8b949e;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+        .card .meta {
+            color: #484f58;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.3rem;
+        }
+        .badge-arch { background: #1f3a5f; color: #58a6ff; }
+        .badge-security { background: #3d1f1f; color: #f85149; }
+        .badge-retro { background: #1f3d2a; color: #3fb950; }
+        .badge-ops { background: #3d3a1f; color: #d29922; }
+        footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #30363d;
+            color: #484f58;
+            font-size: 0.85rem;
+        }
+        footer a { color: #58a6ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <h1>Robo Stack</h1>
+    <p class="subtitle">Hybrid AI Development Stack — Documentation Portal</p>
+
+    <h2>Architecture & Security</h2>
+
+    <div class="card">
+        <a href="robo-stack-architecture.html">System Architecture Document</a>
+        <span class="badge badge-arch">Architecture</span>
+        <div class="desc">Complete system architecture — infrastructure, K8s, CI/CD, monitoring, security, trust boundaries. 12 sections, 7 SVG diagrams.</div>
+        <div class="meta">S3.6 (#39) — Platform Architect — Sprint 3.1</div>
+    </div>
+
+    <div class="card">
+        <a href="robo-stack-threat-model.html">MITRE ATT&CK Threat Model</a>
+        <span class="badge badge-security">Security</span>
+        <div class="desc">Comprehensive threat model mapped to MITRE ATT&CK framework. Risk heat map, gap analysis, remediation priorities.</div>
+        <div class="meta">S3.7 (#40) — Overwatch — Sprint 3.1</div>
+    </div>
+
+    <h2>Operations</h2>
+
+    <div class="card">
+        <a href="prod-readiness-report.html">Production Readiness Report</a>
+        <span class="badge badge-ops">Ops</span>
+        <div class="desc">Automated verification of infrastructure, deployment pipeline, monitoring, security, and application health.</div>
+        <div class="meta">S3.5 (#33) — DevOps + Overwatch — Sprint 3.1</div>
+    </div>
+
+    <div class="card">
+        <a href="runbook.md">Operational Runbook</a>
+        <span class="badge badge-ops">Ops</span>
+        <div class="desc">How to deploy, rollback, respond to alerts, rotate secrets, and handle emergencies.</div>
+        <div class="meta">S3.5 (#33) — DevOps — Sprint 3.1</div>
+    </div>
+
+    <h2>Sprint Retrospectives</h2>
+
+    <div class="card">
+        <a href="sprint-1-retrospective.html">Sprint 1 Retrospective</a>
+        <span class="badge badge-retro">Retro</span>
+        <div class="desc">Local Development Layer — 7/8 stories, 10 issues logged, Copilot Agent Mode scored 1/5.</div>
+        <div class="meta">Sprint 1 — Epic 1</div>
+    </div>
+
+    <div class="card">
+        <a href="sprint-2-retrospective.html">Sprint 2 Retrospective</a>
+        <span class="badge badge-retro">Retro</span>
+        <div class="desc">AI-Augmented Dev Environment — 8/8 stories, zero incidents, zero CI failures.</div>
+        <div class="meta">Sprint 2 — Epic 2</div>
+    </div>
+
+    <h2>Decision Documents</h2>
+
+    <div class="card">
+        <a href="ev3.1-gitops-eval.md">EV3.1: GitOps Eval — ArgoCD vs GitHub Actions</a>
+        <span class="badge badge-arch">Decision</span>
+        <div class="desc">GitHub Actions GitOps selected (4.0/5). Zero cluster overhead, builds on existing 9 workflows.</div>
+        <div class="meta">Sprint 3 — EV3.1 (#34)</div>
+    </div>
+
+    <div class="card">
+        <a href="ev2.1-model-serving-eval.md">EV2.1: Local vs Cloud Model Serving</a>
+        <span class="badge badge-arch">Decision</span>
+        <div class="desc">Cloud-first Claude API selected. Local models worse in every dimension on CPU-only t3.xlarge.</div>
+        <div class="meta">Sprint 2 — EV2.1 (#25)</div>
+    </div>
+
+    <h2>Guides</h2>
+
+    <div class="card">
+        <a href="deployment-guide.md">Deployment Guide</a>
+        <div class="desc">GitOps pipeline overview — dev auto-deploy, staging tag-trigger, prod manual gate, rollback procedures.</div>
+    </div>
+
+    <div class="card">
+        <a href="monitoring-setup-guide.md">Monitoring Setup Guide</a>
+        <div class="desc">Prometheus + Grafana + Loki architecture, dashboards, alert routing, troubleshooting.</div>
+    </div>
+
+    <div class="card">
+        <a href="multi-env-guide.md">Multi-Environment Guide</a>
+        <div class="desc">Kustomize overlays for dev/staging/prod, namespace strategy, resource quotas, network policies.</div>
+    </div>
+
+    <div class="card">
+        <a href="security-baseline.md">Security Baseline</a>
+        <div class="desc">CodeQL, gitleaks, Trivy, Dependabot, RBAC, secret management, incident response.</div>
+    </div>
+
+    <div class="card">
+        <a href="story-sizing-guide.md">Story Sizing Guide</a>
+        <div class="desc">Target story size by type, sizing heuristics, anti-patterns, sprint history analysis.</div>
+    </div>
+
+    <footer>
+        <p><a href="https://github.com/LittleYeti-Dev/robo-stack">GitHub Repository</a> · <a href="https://github.com/users/LittleYeti-Dev/projects/1">Project Board</a> · <a href="sprint-3.1-agent-prompts.md">Sprint 3.1 Agent Prompts</a></p>
+        <p>Robo Stack — Yeti Knowledge Systems · Last updated: 2026-03-15</p>
+    </footer>
+</body>
+</html>
