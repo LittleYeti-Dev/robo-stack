@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robo Stack — MITRE ATT&CK Threat Model</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-code: #1c2128;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-red: #f85149;
+  --accent-orange: #d29922;
+  --accent-purple: #bc8cff;
+  --accent-cyan: #39d2c0;
+  --critical: #f85149;
+  --high: #d29922;
+  --medium: #e3b341;
+  --low: #3fb950;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 16px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+h1 { font-size: 2.2rem; color: var(--accent-red); margin-bottom: 0.5rem; }
+h2 { font-size: 1.6rem; color: var(--accent-cyan); margin: 2.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1.2rem; color: var(--accent-green); margin: 1.5rem 0 0.5rem; }
+h4 { font-size: 1rem; color: var(--accent-orange); margin: 1rem 0 0.4rem; }
+p { margin-bottom: 0.8rem; }
+a { color: var(--accent-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+li { margin-bottom: 0.3rem; }
+code { background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; color: var(--accent-orange); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.88rem; }
+th, td { padding: 0.5rem 0.6rem; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg-code); color: var(--accent-cyan); font-weight: 600; position: sticky; top: 0; }
+tr:nth-child(even) { background: rgba(22,27,34,0.5); }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin: 1rem 0; }
+.badge { display: inline-block; padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+.badge-crit { background: rgba(248,81,73,0.2); color: var(--critical); }
+.badge-high { background: rgba(210,153,34,0.2); color: var(--high); }
+.badge-med { background: rgba(227,179,65,0.15); color: var(--medium); }
+.badge-low { background: rgba(63,185,80,0.15); color: var(--low); }
+.badge-yes { background: rgba(63,185,80,0.15); color: var(--low); }
+.badge-partial { background: rgba(210,153,34,0.2); color: var(--high); }
+.badge-no { background: rgba(248,81,73,0.2); color: var(--critical); }
+.diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1.5rem 0; overflow-x: auto; }
+.diagram-title { font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.5rem; font-size: 0.95rem; }
+.subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 1.5rem; }
+.toc { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem 2rem; margin: 1.5rem 0; }
+.toc h3 { margin-top: 0; }
+.toc ol { list-style: none; margin-left: 0; counter-reset: toc; }
+.toc > ol > li { counter-increment: toc; margin-bottom: 0.3rem; }
+.toc > ol > li::before { content: counter(toc) ". "; color: var(--accent-cyan); font-weight: 600; }
+.meta { display: flex; flex-wrap: wrap; gap: 1.5rem; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; }
+@media (max-width: 800px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+.stat-card { text-align: center; }
+.stat-num { font-size: 2.2rem; font-weight: 700; }
+.stat-label { font-size: 0.85rem; color: var(--text-muted); }
+.collapsible { cursor: pointer; user-select: none; }
+.collapsible::after { content: ' [+]'; color: var(--text-muted); font-size: 0.8em; }
+.collapsible.open::after { content: ' [-]'; }
+.collapse-content { display: none; }
+.collapse-content.open { display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.8rem; }
+.legend-item { display: flex; align-items: center; gap: 0.3rem; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+.risk-9 { color: var(--critical); font-weight: 700; }
+.risk-6 { color: var(--high); font-weight: 700; }
+.risk-4, .risk-3 { color: var(--medium); font-weight: 600; }
+.risk-2, .risk-1 { color: var(--low); }
+.progress-bar { width: 100%; height: 8px; background: var(--bg-code); border-radius: 4px; overflow: hidden; margin: 0.3rem 0; }
+.progress-fill { height: 100%; border-radius: 4px; }
+details { margin: 0.5rem 0; }
+details summary { cursor: pointer; color: var(--accent-blue); font-weight: 600; padding: 0.3rem 0; }
+details summary:hover { text-decoration: underline; }
+@media print {
+  body { background: #fff; color: #000; font-size: 10pt; }
+  .container { max-width: 100%; padding: 0; }
+  h1, h2, h3, h4 { color: #000; }
+  .card, .diagram, .toc { border-color: #ccc; background: #f9f9f9; }
+  th { background: #eee; color: #000; }
+  a { color: #000; text-decoration: underline; }
+  svg text { fill: #000 !important; }
+  details { open; }
+  details[open] summary { display: block; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<h1>Robo Stack — MITRE ATT&CK Threat Model</h1>
+<p class="subtitle">DevSecOps Security Assessment &middot; Overwatch</p>
+<div class="meta">
+  <span>Version 1.0</span>
+  <span>Sprint 3.1 — S3.7 Deliverable</span>
+  <span>Issue #40</span>
+  <span>Based on S3.6 Architecture Doc (#39)</span>
+  <span>Generated 2026-03-15</span>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+<h3>Table of Contents</h3>
+<ol>
+  <li><a href="#executive-summary">Executive Summary</a></li>
+  <li><a href="#surface-mapping">Architecture Surface Mapping</a></li>
+  <li><a href="#attck-mapping">MITRE ATT&CK Technique Mapping</a></li>
+  <li><a href="#threat-table">Threat Table</a></li>
+  <li><a href="#controls-assessment">Existing Controls Assessment</a></li>
+  <li><a href="#gap-analysis">Gap Analysis</a></li>
+  <li><a href="#recommendations">Recommendations Dashboard</a></li>
+</ol>
+</div>
+
+<!-- ============================================================ -->
+<!-- 1. EXECUTIVE SUMMARY -->
+<!-- ============================================================ -->
+<h2 id="executive-summary">1. Executive Summary</h2>
+
+<div class="grid-4">
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--accent-blue)">38</div>
+    <div class="stat-label">Total Threats Identified</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--accent-green)">55%</div>
+    <div class="stat-label">Mitigated / Partially Mitigated</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--critical)">45%</div>
+    <div class="stat-label">Open Gaps</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--high)">6</div>
+    <div class="stat-label">Critical / High Risk</div>
+  </div>
+</div>
+
+<h3>Risk Distribution</h3>
+<div class="grid-4">
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--critical)">2</div>
+    <div class="stat-label">Critical (Score 9)</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--high)">4</div>
+    <div class="stat-label">High (Score 6)</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--medium)">18</div>
+    <div class="stat-label">Medium (Score 3-4)</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--low)">14</div>
+    <div class="stat-label">Low (Score 1-2)</div>
+  </div>
+</div>
+
+<h3>Top 5 Priority Threats</h3>
+<table>
+  <tr><th>#</th><th>Threat</th><th>ATT&CK ID</th><th>Target</th><th>Risk</th><th>Status</th></tr>
+  <tr><td>1</td><td>K8s API / kubectl proxy exposed to 0.0.0.0/0</td><td>T1190</td><td>K3s API (:6443, :8001)</td><td><span class="badge badge-crit">9 Critical</span></td><td><span class="badge badge-no">Open</span></td></tr>
+  <tr><td>2</td><td>Terraform state contains secrets in plaintext</td><td>T1552.001</td><td>Terraform local state</td><td><span class="badge badge-crit">9 Critical</span></td><td><span class="badge badge-no">Open</span></td></tr>
+  <tr><td>3</td><td>K8s Secrets base64-encoded (not encrypted at rest)</td><td>T1552.007</td><td>K8s Secrets (etcd)</td><td><span class="badge badge-high">6 High</span></td><td><span class="badge badge-partial">Partial</span></td></tr>
+  <tr><td>4</td><td>Claude API key exfiltration via proxy</td><td>T1528</td><td>Claude Proxy</td><td><span class="badge badge-high">6 High</span></td><td><span class="badge badge-partial">Partial</span></td></tr>
+  <tr><td>5</td><td>No network policies — cross-namespace unrestricted</td><td>T1021</td><td>K8s namespaces</td><td><span class="badge badge-high">6 High</span></td><td><span class="badge badge-no">Open</span></td></tr>
+</table>
+
+<!-- Risk Heat Map -->
+<div class="diagram">
+<div class="diagram-title">Risk Heat Map — Likelihood &times; Impact</div>
+<svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:500px;">
+  <!-- Grid -->
+  <text x="250" y="25" fill="#e6edf3" font-size="14" text-anchor="middle" font-weight="bold">Risk Heat Map</text>
+  <text x="30" y="210" fill="#8b949e" font-size="12" text-anchor="middle" transform="rotate(-90,30,210)">LIKELIHOOD</text>
+  <text x="270" y="385" fill="#8b949e" font-size="12" text-anchor="middle">IMPACT</text>
+  <!-- Axis labels -->
+  <text x="80" y="100" fill="#8b949e" font-size="11" text-anchor="end">High (3)</text>
+  <text x="80" y="200" fill="#8b949e" font-size="11" text-anchor="end">Med (2)</text>
+  <text x="80" y="300" fill="#8b949e" font-size="11" text-anchor="end">Low (1)</text>
+  <text x="170" y="360" fill="#8b949e" font-size="11" text-anchor="middle">Low (1)</text>
+  <text x="270" y="360" fill="#8b949e" font-size="11" text-anchor="middle">Med (2)</text>
+  <text x="370" y="360" fill="#8b949e" font-size="11" text-anchor="middle">High (3)</text>
+  <!-- Cells -->
+  <!-- Low-Low (1) -->
+  <rect x="100" y="250" width="140" height="90" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1"/>
+  <text x="170" y="290" fill="#3fb950" font-size="20" text-anchor="middle" font-weight="bold">5</text>
+  <text x="170" y="310" fill="#3fb950" font-size="10" text-anchor="middle">Score: 1</text>
+  <!-- Low-Med (2) -->
+  <rect x="240" y="250" width="140" height="90" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1"/>
+  <text x="310" y="290" fill="#3fb950" font-size="20" text-anchor="middle" font-weight="bold">9</text>
+  <text x="310" y="310" fill="#3fb950" font-size="10" text-anchor="middle">Score: 2</text>
+  <!-- Low-High (3) -->
+  <rect x="100" y="50" width="140" height="90" rx="4" fill="rgba(227,179,65,0.15)" stroke="#e3b341" stroke-width="1"/>
+  <text x="170" y="90" fill="#e3b341" font-size="20" text-anchor="middle" font-weight="bold">4</text>
+  <text x="170" y="110" fill="#e3b341" font-size="10" text-anchor="middle">Score: 3</text>
+  <!-- Med-Low (2) -->
+  <rect x="380" y="250" width="100" height="90" rx="4" fill="rgba(227,179,65,0.15)" stroke="#e3b341" stroke-width="1"/>
+  <text x="430" y="290" fill="#e3b341" font-size="20" text-anchor="middle" font-weight="bold">0</text>
+  <text x="430" y="310" fill="#e3b341" font-size="10" text-anchor="middle">Score: 3</text>
+  <!-- Med-Med (4) -->
+  <rect x="240" y="150" width="140" height="90" rx="4" fill="rgba(227,179,65,0.2)" stroke="#e3b341" stroke-width="1"/>
+  <text x="310" y="190" fill="#e3b341" font-size="20" text-anchor="middle" font-weight="bold">14</text>
+  <text x="310" y="210" fill="#e3b341" font-size="10" text-anchor="middle">Score: 4</text>
+  <!-- Med-High (6) -->
+  <rect x="380" y="150" width="100" height="90" rx="4" fill="rgba(210,153,34,0.25)" stroke="#d29922" stroke-width="1.5"/>
+  <text x="430" y="190" fill="#d29922" font-size="20" text-anchor="middle" font-weight="bold">4</text>
+  <text x="430" y="210" fill="#d29922" font-size="10" text-anchor="middle">Score: 6</text>
+  <!-- High-Low (3) -->
+  <rect x="100" y="150" width="140" height="90" rx="4" fill="rgba(227,179,65,0.15)" stroke="#e3b341" stroke-width="1"/>
+  <text x="170" y="190" fill="#e3b341" font-size="20" text-anchor="middle" font-weight="bold">4</text>
+  <text x="170" y="210" fill="#e3b341" font-size="10" text-anchor="middle">Score: 2</text>
+  <!-- High-Med (6) — already done above, this is High likelihood Med impact -->
+  <!-- High-High (9) -->
+  <rect x="380" y="50" width="100" height="90" rx="4" fill="rgba(248,81,73,0.25)" stroke="#f85149" stroke-width="2"/>
+  <text x="430" y="90" fill="#f85149" font-size="20" text-anchor="middle" font-weight="bold">2</text>
+  <text x="430" y="110" fill="#f85149" font-size="10" text-anchor="middle">Score: 9</text>
+  <!-- High-Med (6) -->
+  <rect x="240" y="50" width="140" height="90" rx="4" fill="rgba(210,153,34,0.2)" stroke="#d29922" stroke-width="1"/>
+  <text x="310" y="90" fill="#d29922" font-size="20" text-anchor="middle" font-weight="bold">0</text>
+  <text x="310" y="110" fill="#d29922" font-size="10" text-anchor="middle">Score: 6</text>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<!-- 2. ARCHITECTURE SURFACE MAPPING -->
+<!-- ============================================================ -->
+<h2 id="surface-mapping">2. Architecture Surface Mapping</h2>
+
+<p>Every component from the S3.6 architecture document is mapped to its attack surface, trust boundary, data flows, and authentication mechanism.</p>
+
+<table>
+  <tr><th>Component</th><th>Layer</th><th>Attack Surface</th><th>Trust Boundary</th><th>Data Flows</th><th>Auth Mechanism</th></tr>
+  <tr>
+    <td><strong>EC2 t3.xlarge</strong></td>
+    <td>Infrastructure</td>
+    <td>SSH (:22), public IP, IMDSv2, user-data bootstrap</td>
+    <td>TB-1 (Internet→AWS)</td>
+    <td>SSH in, K8s API out, CloudWatch out</td>
+    <td>SSH key + CIDR restriction</td>
+  </tr>
+  <tr>
+    <td><strong>VPC / Subnets</strong></td>
+    <td>Infrastructure</td>
+    <td>Public subnet auto-assign IP, private subnet isolated</td>
+    <td>TB-1</td>
+    <td>IGW ↔ public subnet</td>
+    <td>Security group rules</td>
+  </tr>
+  <tr>
+    <td><strong>Security Groups</strong></td>
+    <td>Infrastructure</td>
+    <td>7 ingress rules, ports 22/80/443/6443/8001 + VPC internal</td>
+    <td>TB-1</td>
+    <td>Inbound filter for all traffic</td>
+    <td>IP-based (CIDR) for SSH; open for others</td>
+  </tr>
+  <tr>
+    <td><strong>IAM Role</strong></td>
+    <td>Infrastructure</td>
+    <td>4 policies: ECR, CloudWatch, S3, EC2-RO</td>
+    <td>TB-1</td>
+    <td>EC2 → AWS services</td>
+    <td>Instance profile, IMDSv2</td>
+  </tr>
+  <tr>
+    <td><strong>K3s API Server</strong></td>
+    <td>Kubernetes</td>
+    <td>Port 6443 exposed to 0.0.0.0/0</td>
+    <td>TB-2 (Host→K3s)</td>
+    <td>kubectl commands, deployments, RBAC</td>
+    <td>kubeconfig certificate</td>
+  </tr>
+  <tr>
+    <td><strong>K3s kubelet</strong></td>
+    <td>Kubernetes</td>
+    <td>Node agent, container exec capability</td>
+    <td>TB-2</td>
+    <td>Pod management, image pulls</td>
+    <td>K8s RBAC</td>
+  </tr>
+  <tr>
+    <td><strong>K3s etcd (embedded)</strong></td>
+    <td>Kubernetes</td>
+    <td>Stores all cluster state including Secrets</td>
+    <td>TB-2</td>
+    <td>API server ↔ etcd</td>
+    <td>Local socket (single-node)</td>
+  </tr>
+  <tr>
+    <td><strong>Claude API Proxy</strong></td>
+    <td>Application</td>
+    <td>FastAPI :8000, rate limiting, /metrics endpoint</td>
+    <td>TB-3 (K3s→External API)</td>
+    <td>Ingress → Proxy → api.anthropic.com</td>
+    <td>API key via K8s Secret</td>
+  </tr>
+  <tr>
+    <td><strong>Code Server</strong></td>
+    <td>Application</td>
+    <td>Browser IDE :8443, terminal access, file system</td>
+    <td>TB-1</td>
+    <td>Developer ↔ IDE ↔ filesystem</td>
+    <td>Password</td>
+  </tr>
+  <tr>
+    <td><strong>Jupyter Notebook</strong></td>
+    <td>Application</td>
+    <td>Notebook :8888, arbitrary code execution</td>
+    <td>TB-1</td>
+    <td>Developer ↔ kernel ↔ cluster</td>
+    <td>Token</td>
+  </tr>
+  <tr>
+    <td><strong>Node Dev</strong></td>
+    <td>Application</td>
+    <td>Dev container :3000</td>
+    <td>TB-1</td>
+    <td>Developer ↔ Node.js runtime</td>
+    <td>None specified</td>
+  </tr>
+  <tr>
+    <td><strong>Prometheus</strong> <em>(planned)</em></td>
+    <td>Monitoring</td>
+    <td>Metrics scrape :9090, query API</td>
+    <td>TB-5 (internal)</td>
+    <td>Scrape all pod /metrics endpoints</td>
+    <td>ClusterIP (internal only)</td>
+  </tr>
+  <tr>
+    <td><strong>Grafana</strong> <em>(planned)</em></td>
+    <td>Monitoring</td>
+    <td>Dashboard UI :3000, data source queries</td>
+    <td>TB-5</td>
+    <td>Prometheus → Grafana → User</td>
+    <td>Username/password</td>
+  </tr>
+  <tr>
+    <td><strong>Loki</strong> <em>(planned)</em></td>
+    <td>Monitoring</td>
+    <td>Log ingestion :3100</td>
+    <td>TB-5</td>
+    <td>Promtail → Loki → Grafana</td>
+    <td>ClusterIP (internal only)</td>
+  </tr>
+  <tr>
+    <td><strong>GitHub Actions</strong></td>
+    <td>CI/CD</td>
+    <td>9 workflows, secrets in env, runner access</td>
+    <td>TB-4 (GitHub→EC2)</td>
+    <td>Code → CI → GHCR → K8s deploy</td>
+    <td>GITHUB_TOKEN, GitHub Secrets</td>
+  </tr>
+  <tr>
+    <td><strong>GHCR</strong></td>
+    <td>CI/CD</td>
+    <td>Container image registry</td>
+    <td>TB-4</td>
+    <td>Docker push from CI, image pull from K3s</td>
+    <td>GITHUB_TOKEN, imagePullSecret</td>
+  </tr>
+  <tr>
+    <td><strong>Terraform State</strong></td>
+    <td>Infrastructure</td>
+    <td>Local .tfstate file contains all resource metadata</td>
+    <td>TB-6 (Developer→GitHub)</td>
+    <td>terraform apply → AWS API</td>
+    <td>AWS credentials, local file access</td>
+  </tr>
+  <tr>
+    <td><strong>Secrets (GitHub)</strong></td>
+    <td>Security</td>
+    <td>Encrypted at rest, injected into workflow env</td>
+    <td>TB-4</td>
+    <td>GitHub → Actions runner → env vars</td>
+    <td>GitHub RBAC (repo admin)</td>
+  </tr>
+  <tr>
+    <td><strong>Secrets (K8s)</strong></td>
+    <td>Security</td>
+    <td>base64 in etcd, mounted as env/volume</td>
+    <td>TB-2</td>
+    <td>etcd → pod env injection</td>
+    <td>K8s RBAC (get secrets permission)</td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- 3. MITRE ATT&CK TECHNIQUE MAPPING -->
+<!-- ============================================================ -->
+<h2 id="attck-mapping">3. MITRE ATT&CK Technique Mapping</h2>
+
+<!-- TA0001: Initial Access -->
+<details open>
+<summary>TA0001 — Initial Access</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Exploit Public-Facing Application</td><td>T1190</td><td>K3s API (:6443) and kubectl proxy (:8001) exposed to 0.0.0.0/0. Code Server (:8443) and Jupyter (:8888) accessible externally. Grafana dashboard (when deployed).</td><td>K3s API, Dev Tools, Grafana</td></tr>
+  <tr><td>Valid Accounts</td><td>T1078</td><td>AWS IAM credentials, GitHub PAT tokens, K8s ServiceAccount tokens, Code Server password, Jupyter token.</td><td>AWS, GitHub, K8s, Dev Tools</td></tr>
+  <tr><td>Valid Accounts: Cloud Accounts</td><td>T1078.004</td><td>AWS IAM role attached to EC2 instance profile. If instance is compromised, attacker inherits ECR/S3/CloudWatch permissions.</td><td>AWS IAM Role</td></tr>
+  <tr><td>Trusted Relationship</td><td>T1199</td><td>GitHub Actions has deploy access to K3s cluster. Dependabot auto-creates PRs. Supply chain via Actions marketplace.</td><td>GitHub Actions, Dependabot</td></tr>
+  <tr><td>External Remote Services</td><td>T1133</td><td>SSH (:22) access to EC2 (CIDR-restricted). kubectl direct access to cluster.</td><td>EC2 SSH, K3s API</td></tr>
+</table>
+</details>
+
+<!-- TA0002: Execution -->
+<details>
+<summary>TA0002 — Execution</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Command and Scripting Interpreter</td><td>T1059</td><td>kubectl exec into pods, Code Server terminal, Jupyter code cells, CI/CD pipeline run steps.</td><td>K3s pods, Dev Tools, CI/CD</td></tr>
+  <tr><td>Container Administration Command</td><td>T1609</td><td>kubectl exec, docker exec on the EC2 host. Full shell access within containers.</td><td>K3s, Docker</td></tr>
+  <tr><td>Scheduled Task/Job</td><td>T1053</td><td>GitHub Actions cron schedules (CodeQL weekly, security scans). K8s CronJobs if created.</td><td>GitHub Actions, K3s</td></tr>
+  <tr><td>User Execution</td><td>T1204</td><td>Malicious PRs triggering CI. Social engineering via GitHub issues/comments.</td><td>GitHub, CI/CD</td></tr>
+</table>
+</details>
+
+<!-- TA0003: Persistence -->
+<details>
+<summary>TA0003 — Persistence</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Account Manipulation</td><td>T1098</td><td>IAM policy modification, K8s RBAC role changes, GitHub collaborator additions.</td><td>AWS IAM, K8s RBAC, GitHub</td></tr>
+  <tr><td>Container Orchestration Job</td><td>T1053.007</td><td>Deploy malicious CronJob or DaemonSet into K3s cluster for persistent access.</td><td>K3s cluster</td></tr>
+  <tr><td>Implant Internal Image</td><td>T1525</td><td>Push backdoored image to GHCR, gets pulled on next deploy.</td><td>GHCR, Docker pipeline</td></tr>
+  <tr><td>Create Account</td><td>T1136</td><td>Create new K8s ServiceAccount, new IAM user, new GitHub deploy key.</td><td>K8s, AWS, GitHub</td></tr>
+  <tr><td>Server Software Component: Web Shell</td><td>T1505.003</td><td>Code Server provides full terminal. Jupyter allows arbitrary code execution. Either could serve as implant.</td><td>Code Server, Jupyter</td></tr>
+</table>
+</details>
+
+<!-- TA0004: Privilege Escalation -->
+<details>
+<summary>TA0004 — Privilege Escalation</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Cloud Accounts</td><td>T1078.004</td><td>Escalate from EC2 instance role to broader AWS permissions via policy manipulation.</td><td>AWS IAM</td></tr>
+  <tr><td>Escape to Host</td><td>T1611</td><td>Container breakout from K3s pod to EC2 host. Especially dangerous without pod security standards.</td><td>K3s pods → EC2 host</td></tr>
+  <tr><td>Exploitation for Privilege Escalation</td><td>T1068</td><td>Exploit K3s/kernel vulnerability on the single node to gain root.</td><td>K3s, Ubuntu host</td></tr>
+  <tr><td>Valid Accounts</td><td>T1078</td><td>Self-approved PRs (single developer model) bypass review gates. Sole owner can escalate without oversight.</td><td>GitHub, all systems</td></tr>
+</table>
+</details>
+
+<!-- TA0005: Defense Evasion -->
+<details>
+<summary>TA0005 — Defense Evasion</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Impair Defenses</td><td>T1562</td><td>Disable CodeQL workflow, modify security-scan.yml, remove gitleaks pre-commit hook, alter Trivy severity thresholds.</td><td>CI/CD workflows</td></tr>
+  <tr><td>Impair Defenses: Disable Cloud Logs</td><td>T1562.008</td><td>Delete CloudWatch log group, modify retention to 1 day, disable monitoring stack.</td><td>CloudWatch, Prometheus</td></tr>
+  <tr><td>Indicator Removal</td><td>T1070</td><td>Delete K8s audit logs, clear container logs, remove CloudWatch entries.</td><td>K3s, CloudWatch, Loki</td></tr>
+  <tr><td>Masquerading</td><td>T1036</td><td>Name malicious pods to look like legitimate services (e.g., "prometheus-exporter").</td><td>K3s cluster</td></tr>
+</table>
+</details>
+
+<!-- TA0006: Credential Access -->
+<details>
+<summary>TA0006 — Credential Access</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Unsecured Credentials: Credentials In Files</td><td>T1552.001</td><td>Terraform .tfstate contains resource metadata and potentially secret values in plaintext. .env files on developer machines.</td><td>Terraform state, .env</td></tr>
+  <tr><td>Unsecured Credentials: Container API</td><td>T1552.007</td><td>K8s Secrets are base64-encoded (not encrypted). Any pod with RBAC access can read them. etcd stores in clear text without encryption-at-rest config.</td><td>K8s Secrets, etcd</td></tr>
+  <tr><td>Steal Application Access Token</td><td>T1528</td><td>Claude API key in K8s Secret. GitHub PAT in remote URLs. GITHUB_TOKEN in CI workflows.</td><td>Claude Proxy, GitHub, CI</td></tr>
+  <tr><td>Brute Force</td><td>T1110</td><td>Code Server password, Jupyter token, Grafana login (when deployed).</td><td>Dev Tools, Grafana</td></tr>
+  <tr><td>Credentials from Password Stores</td><td>T1555</td><td>GitHub Secrets accessible to any workflow in the repo. No separation by environment.</td><td>GitHub Secrets</td></tr>
+</table>
+</details>
+
+<!-- TA0008: Lateral Movement -->
+<details>
+<summary>TA0008 — Lateral Movement</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Remote Services: SSH</td><td>T1021.004</td><td>SSH from internet to EC2 (CIDR-restricted). From EC2 host, access all K3s services.</td><td>EC2, K3s</td></tr>
+  <tr><td>Use Alternate Authentication Material</td><td>T1550</td><td>Stolen kubeconfig provides full cluster access. Stolen GitHub PAT provides repo access.</td><td>K3s, GitHub</td></tr>
+  <tr><td>Lateral Tool Transfer</td><td>T1570</td><td>No network policies between namespaces. Pod in dev can reach staging/prod services.</td><td>K8s namespaces</td></tr>
+  <tr><td>Remote Service Session Hijacking</td><td>T1563</td><td>Code Server and Jupyter sessions could be hijacked if tokens are intercepted.</td><td>Dev Tools</td></tr>
+</table>
+</details>
+
+<!-- TA0009: Collection -->
+<details>
+<summary>TA0009 — Collection</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Data from Cloud Storage</td><td>T1530</td><td>IAM role has S3 access (robo-stack-* buckets). EBS snapshots if created.</td><td>S3, EBS</td></tr>
+  <tr><td>Automated Collection</td><td>T1119</td><td>Prometheus scrapes all pod metrics. Loki collects all logs. Could expose sensitive data in metrics/logs.</td><td>Prometheus, Loki</td></tr>
+  <tr><td>Data from Information Repositories</td><td>T1213</td><td>GitHub repo contains architecture docs, security baseline, deployment secrets info.</td><td>GitHub repo</td></tr>
+</table>
+</details>
+
+<!-- TA0010: Exfiltration -->
+<details>
+<summary>TA0010 — Exfiltration</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Exfiltration Over Web Service</td><td>T1567</td><td>Claude API proxy as data exfil channel — encode data in prompts. All egress is unrestricted.</td><td>Claude Proxy</td></tr>
+  <tr><td>Exfiltration Over Alternative Protocol</td><td>T1048</td><td>DNS tunneling, ICMP exfil from pods. No egress filtering.</td><td>K3s pods</td></tr>
+  <tr><td>Transfer Data to Cloud Account</td><td>T1537</td><td>IAM role has S3 access. Data could be copied to attacker-controlled bucket.</td><td>AWS S3</td></tr>
+</table>
+</details>
+
+<!-- TA0040: Impact -->
+<details>
+<summary>TA0040 — Impact</summary>
+<table>
+  <tr><th>Technique</th><th>ID</th><th>Applicability</th><th>Target Component</th></tr>
+  <tr><td>Data Destruction</td><td>T1485</td><td><code>terraform destroy</code> wipes all infrastructure. <code>kubectl delete ns</code> removes all workloads.</td><td>Terraform, K3s</td></tr>
+  <tr><td>Resource Hijacking</td><td>T1496</td><td>Deploy cryptominer in K3s pods. Single node = 100% resource impact.</td><td>K3s cluster</td></tr>
+  <tr><td>Network Denial of Service</td><td>T1498</td><td>Exhaust Claude API rate limits (10 RPM). Flood K3s API. Fill EBS disk.</td><td>Claude Proxy, K3s, EBS</td></tr>
+  <tr><td>Endpoint Denial of Service</td><td>T1499</td><td>Crash K3s pods via resource exhaustion. Single node = no failover.</td><td>All services</td></tr>
+  <tr><td>Defacement</td><td>T1491</td><td>Modify index.html on GitHub Pages. Alter Grafana dashboards.</td><td>GitHub Pages, Grafana</td></tr>
+</table>
+</details>
+
+<!-- ============================================================ -->
+<!-- 4. THREAT TABLE -->
+<!-- ============================================================ -->
+<h2 id="threat-table">4. Threat Table</h2>
+
+<p>All 38 identified threats, scored by Likelihood &times; Impact. <span class="badge badge-crit">Critical &#8805;9</span> <span class="badge badge-high">High = 6</span> <span class="badge badge-med">Medium = 3-4</span> <span class="badge badge-low">Low &#8804;2</span></p>
+
+<div style="overflow-x:auto;">
+<table>
+  <tr><th>ID</th><th>ATT&CK</th><th>Technique</th><th>Target</th><th>L</th><th>I</th><th>Risk</th><th>Mitigated?</th><th>Existing Mitigation</th><th>Gap</th></tr>
+  <!-- Critical -->
+  <tr><td>T01</td><td>T1190</td><td>Exploit K3s API (0.0.0.0/0)</td><td>K3s API :6443/:8001</td><td>3</td><td>3</td><td class="risk-9">9</td><td><span class="badge badge-no">No</span></td><td>kubeconfig auth required</td><td>Restrict SG to CIDR</td></tr>
+  <tr><td>T02</td><td>T1552.001</td><td>Secrets in Terraform state</td><td>Local .tfstate</td><td>3</td><td>3</td><td class="risk-9">9</td><td><span class="badge badge-no">No</span></td><td>.gitignore excludes .tfstate</td><td>Enable S3 backend + encryption</td></tr>
+  <!-- High -->
+  <tr><td>T03</td><td>T1552.007</td><td>K8s Secrets base64 (not encrypted)</td><td>etcd / K8s Secrets</td><td>2</td><td>3</td><td class="risk-6">6</td><td><span class="badge badge-partial">Partial</span></td><td>K8s RBAC limits access</td><td>Enable etcd encryption-at-rest</td></tr>
+  <tr><td>T04</td><td>T1528</td><td>Claude API key theft</td><td>Claude Proxy</td><td>2</td><td>3</td><td class="risk-6">6</td><td><span class="badge badge-partial">Partial</span></td><td>K8s Secret, no logging of key value</td><td>Key rotation automation, usage alerts</td></tr>
+  <tr><td>T05</td><td>T1570</td><td>No network policies (cross-NS)</td><td>K8s namespaces</td><td>2</td><td>3</td><td class="risk-6">6</td><td><span class="badge badge-no">No</span></td><td>Namespace separation only</td><td>Deploy NetworkPolicy resources</td></tr>
+  <tr><td>T06</td><td>T1611</td><td>Container escape to host</td><td>K3s pods → EC2</td><td>2</td><td>3</td><td class="risk-6">6</td><td><span class="badge badge-partial">Partial</span></td><td>Resource limits, non-root (partial)</td><td>Pod Security Standards (restricted)</td></tr>
+  <!-- Medium (score 4) -->
+  <tr><td>T07</td><td>T1190</td><td>Exploit Code Server</td><td>Code Server :8443</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Password auth</td><td>SSO/MFA, IP restriction</td></tr>
+  <tr><td>T08</td><td>T1190</td><td>Exploit Jupyter</td><td>Jupyter :8888</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Token auth</td><td>SSO/MFA, IP restriction</td></tr>
+  <tr><td>T09</td><td>T1078</td><td>Compromised GitHub PAT</td><td>GitHub repo</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Branch protection, CODEOWNERS</td><td>PAT scope limitation, rotation policy</td></tr>
+  <tr><td>T10</td><td>T1199</td><td>Supply chain via GH Actions</td><td>CI/CD pipeline</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Dependabot Actions updates</td><td>Pin actions to SHA, not tags</td></tr>
+  <tr><td>T11</td><td>T1562</td><td>Disable security workflows</td><td>CI/CD pipeline</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Branch protection requires checks</td><td>CODEOWNERS on .github/workflows/</td></tr>
+  <tr><td>T12</td><td>T1059</td><td>Malicious code in CI pipeline</td><td>GitHub Actions runner</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>PR review, CodeQL</td><td>Restrict workflow_run triggers</td></tr>
+  <tr><td>T13</td><td>T1098</td><td>IAM policy escalation</td><td>AWS IAM</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Least-privilege policies</td><td>AWS CloudTrail monitoring, SCPs</td></tr>
+  <tr><td>T14</td><td>T1525</td><td>Backdoored container image</td><td>GHCR</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-yes">Yes</span></td><td>Trivy scan on build, SBOM</td><td>Image signing (cosign/Notary)</td></tr>
+  <tr><td>T15</td><td>T1485</td><td>Infrastructure destruction</td><td>Terraform, K3s</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Terraform state, Git history</td><td>State locking, MFA delete on S3</td></tr>
+  <tr><td>T16</td><td>T1496</td><td>Cryptomining in pods</td><td>K3s cluster</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Resource limits per pod</td><td>Runtime anomaly detection, OPA</td></tr>
+  <tr><td>T17</td><td>T1567</td><td>Data exfil via Claude API</td><td>Claude Proxy</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-partial">Partial</span></td><td>Rate limiting (10 RPM)</td><td>Egress filtering, prompt logging</td></tr>
+  <tr><td>T18</td><td>T1078.004</td><td>AWS credential abuse from EC2</td><td>AWS IAM Role</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-yes">Yes</span></td><td>IMDSv2, scoped policies</td><td>CloudTrail alerts on unusual API calls</td></tr>
+  <tr><td>T19</td><td>T1562.008</td><td>Disable CloudWatch logging</td><td>CloudWatch</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-no">No</span></td><td>7-day retention set</td><td>CloudTrail alert on log group deletion</td></tr>
+  <tr><td>T20</td><td>T1070</td><td>Delete K8s audit logs</td><td>K3s, Loki</td><td>2</td><td>2</td><td class="risk-4">4</td><td><span class="badge badge-no">No</span></td><td>CloudWatch backup (partial)</td><td>Immutable log shipping to S3</td></tr>
+  <!-- Medium (score 3) -->
+  <tr><td>T21</td><td>T1053</td><td>Malicious cron in GH Actions</td><td>CI/CD</td><td>1</td><td>3</td><td class="risk-3">3</td><td><span class="badge badge-yes">Yes</span></td><td>Branch protection, code review</td><td>—</td></tr>
+  <tr><td>T22</td><td>T1053.007</td><td>Persistent K8s workload</td><td>K3s</td><td>1</td><td>3</td><td class="risk-3">3</td><td><span class="badge badge-partial">Partial</span></td><td>K8s RBAC</td><td>OPA/Gatekeeper admission control</td></tr>
+  <tr><td>T23</td><td>T1068</td><td>K3s/kernel exploit</td><td>EC2 host</td><td>1</td><td>3</td><td class="risk-3">3</td><td><span class="badge badge-partial">Partial</span></td><td>Auto-updates in user-data</td><td>Unattended-upgrades, Falco</td></tr>
+  <tr><td>T24</td><td>T1048</td><td>DNS/ICMP data exfil</td><td>K3s pods</td><td>1</td><td>3</td><td class="risk-3">3</td><td><span class="badge badge-no">No</span></td><td>No egress filtering</td><td>Network policies, egress proxy</td></tr>
+  <!-- Low (score 2) -->
+  <tr><td>T25</td><td>T1133</td><td>SSH brute force</td><td>EC2 :22</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-yes">Yes</span></td><td>CIDR-restricted, SSH key auth</td><td>fail2ban</td></tr>
+  <tr><td>T26</td><td>T1110</td><td>Brute force Code Server</td><td>Code Server</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-partial">Partial</span></td><td>Password auth</td><td>Rate limiting, lockout</td></tr>
+  <tr><td>T27</td><td>T1110</td><td>Brute force Grafana</td><td>Grafana</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-partial">Partial</span></td><td>Default auth (planned)</td><td>SSO integration</td></tr>
+  <tr><td>T28</td><td>T1036</td><td>Masqueraded pods</td><td>K3s</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-no">No</span></td><td>—</td><td>OPA naming policies, audit</td></tr>
+  <tr><td>T29</td><td>T1136</td><td>Create rogue K8s SA</td><td>K3s RBAC</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-partial">Partial</span></td><td>RBAC</td><td>Audit SA creation events</td></tr>
+  <tr><td>T30</td><td>T1550</td><td>Stolen kubeconfig</td><td>K3s</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-partial">Partial</span></td><td>File permissions</td><td>Short-lived tokens, OIDC</td></tr>
+  <tr><td>T31</td><td>T1530</td><td>S3 bucket data access</td><td>S3</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-yes">Yes</span></td><td>IAM scoped to robo-stack-*</td><td>S3 access logging</td></tr>
+  <tr><td>T32</td><td>T1119</td><td>Sensitive data in metrics/logs</td><td>Prometheus, Loki</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-no">No</span></td><td>—</td><td>Scrub PII from metrics, log filtering</td></tr>
+  <tr><td>T33</td><td>T1213</td><td>Recon from GitHub repo</td><td>GitHub</td><td>2</td><td>1</td><td class="risk-2">2</td><td><span class="badge badge-partial">Partial</span></td><td>Repo is public (intentional)</td><td>Ensure no secrets in docs</td></tr>
+  <tr><td>T34</td><td>T1537</td><td>Data transfer to attacker S3</td><td>AWS S3</td><td>1</td><td>2</td><td class="risk-2">2</td><td><span class="badge badge-partial">Partial</span></td><td>IAM bucket scope</td><td>VPC endpoint for S3, SCPs</td></tr>
+  <!-- Low (score 1) -->
+  <tr><td>T35</td><td>T1498</td><td>Claude API rate limit exhaustion</td><td>Claude Proxy</td><td>1</td><td>1</td><td class="risk-1">1</td><td><span class="badge badge-yes">Yes</span></td><td>Rate limiting: 10 RPM</td><td>—</td></tr>
+  <tr><td>T36</td><td>T1499</td><td>Pod resource exhaustion</td><td>K3s</td><td>1</td><td>1</td><td class="risk-1">1</td><td><span class="badge badge-yes">Yes</span></td><td>Resource limits on all pods</td><td>—</td></tr>
+  <tr><td>T37</td><td>T1491</td><td>GitHub Pages defacement</td><td>index.html</td><td>1</td><td>1</td><td class="risk-1">1</td><td><span class="badge badge-yes">Yes</span></td><td>Branch protection, code review</td><td>—</td></tr>
+  <tr><td>T38</td><td>T1204</td><td>Social engineering via GitHub</td><td>Developer</td><td>1</td><td>1</td><td class="risk-1">1</td><td><span class="badge badge-yes">Yes</span></td><td>Single dev (low social surface)</td><td>—</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<!-- 5. EXISTING CONTROLS ASSESSMENT -->
+<!-- ============================================================ -->
+<h2 id="controls-assessment">5. Existing Controls Assessment</h2>
+
+<table>
+  <tr><th>Control</th><th>Source</th><th>Techniques Mitigated</th><th>Techniques NOT Covered</th><th>Effectiveness</th></tr>
+  <tr>
+    <td><strong>CodeQL</strong></td>
+    <td><code>.github/workflows/codeql.yml</code></td>
+    <td>T1059 (code injection), T1190 (app vulnerabilities), T1525 (backdoor detection in Python)</td>
+    <td>Infrastructure misconfig, K8s threats, credential theft, runtime attacks</td>
+    <td><span class="badge badge-yes">High</span> for code-level; no infra coverage</td>
+  </tr>
+  <tr>
+    <td><strong>gitleaks</strong></td>
+    <td><code>.github/workflows/security-scan.yml</code></td>
+    <td>T1552.001 (secrets in code), T1528 (token exposure in commits)</td>
+    <td>Secrets in Terraform state, K8s Secrets, runtime env vars</td>
+    <td><span class="badge badge-yes">High</span> for commit-time; no runtime coverage</td>
+  </tr>
+  <tr>
+    <td><strong>Trivy</strong></td>
+    <td><code>.github/workflows/security-scan.yml</code>, <code>ci.yml</code></td>
+    <td>T1525 (vulnerable base images), T1068 (known CVEs)</td>
+    <td>Zero-day exploits, misconfigurations, runtime threats</td>
+    <td><span class="badge badge-yes">High</span> for known CVEs</td>
+  </tr>
+  <tr>
+    <td><strong>Dependabot</strong></td>
+    <td><code>.github/dependabot.yml</code></td>
+    <td>T1199 (supply chain — outdated deps), T1195 (compromised packages)</td>
+    <td>Malicious maintainer takeover, typosquatting</td>
+    <td><span class="badge badge-partial">Medium</span> — updates only, no malware detection</td>
+  </tr>
+  <tr>
+    <td><strong>IMDSv2</strong></td>
+    <td><code>terraform/ec2.tf</code> (<code>http_tokens = required</code>)</td>
+    <td>T1078.004 (SSRF-based credential theft from metadata)</td>
+    <td>Direct IAM abuse if instance is compromised</td>
+    <td><span class="badge badge-yes">High</span> for SSRF vector</td>
+  </tr>
+  <tr>
+    <td><strong>Branch Protection</strong></td>
+    <td>GitHub Settings</td>
+    <td>T1562 (workflow tampering), T1098 (unauthorized code changes), T1204 (malicious PRs)</td>
+    <td>Self-approved PRs (single dev), force push by admin</td>
+    <td><span class="badge badge-partial">Medium</span> — weakened by single-dev model</td>
+  </tr>
+  <tr>
+    <td><strong>K8s RBAC</strong></td>
+    <td>K3s default + custom roles</td>
+    <td>T1098 (account manipulation), T1053.007 (unauthorized workloads), T1552.007 (secret access)</td>
+    <td>Container escape bypasses RBAC, no admission control</td>
+    <td><span class="badge badge-partial">Medium</span> — good intent, lacks PSS/OPA</td>
+  </tr>
+  <tr>
+    <td><strong>Network Policies</strong></td>
+    <td>Planned (<code>k8s/overlays/prod/network-policy.yaml</code>)</td>
+    <td>T1570 (lateral movement), T1048 (egress exfil) — <em>when deployed</em></td>
+    <td>Currently covers nothing — not yet applied</td>
+    <td><span class="badge badge-no">Not Deployed</span></td>
+  </tr>
+  <tr>
+    <td><strong>Security Group (SSH CIDR)</strong></td>
+    <td><code>terraform/security-groups.tf</code></td>
+    <td>T1133 (SSH brute force), T1021.004 (unauthorized SSH)</td>
+    <td>K3s API/kubectl proxy still 0.0.0.0/0</td>
+    <td><span class="badge badge-yes">High</span> for SSH; gap on K8s ports</td>
+  </tr>
+  <tr>
+    <td><strong>Rate Limiting (Claude Proxy)</strong></td>
+    <td><code>k8s/claude-proxy/app.py</code></td>
+    <td>T1498 (DoS via API exhaustion), T1567 (limits exfil bandwidth)</td>
+    <td>Does not prevent exfil content, only rate</td>
+    <td><span class="badge badge-partial">Medium</span></td>
+  </tr>
+  <tr>
+    <td><strong>SBOM (syft)</strong></td>
+    <td><code>.github/workflows/security-scan.yml</code></td>
+    <td>T1195 (supply chain visibility)</td>
+    <td>Does not block — only inventories</td>
+    <td><span class="badge badge-partial">Medium</span> — visibility only</td>
+  </tr>
+</table>
+
+<!-- ============================================================ -->
+<!-- 6. GAP ANALYSIS -->
+<!-- ============================================================ -->
+<h2 id="gap-analysis">6. Gap Analysis</h2>
+
+<h3>Unmitigated Threats (sorted by risk score)</h3>
+<table>
+  <tr><th>Threat ID</th><th>Risk</th><th>Description</th><th>Recommended Control</th><th>Effort</th><th>Priority</th></tr>
+  <tr><td>T01</td><td class="risk-9">9</td><td>K3s API/kubectl proxy exposed to internet</td><td>Restrict SG ports 6443 and 8001 to <code>allowed_ssh_cidr</code></td><td><span class="badge badge-low">Low</span></td><td><strong>1 — IMMEDIATE</strong></td></tr>
+  <tr><td>T02</td><td class="risk-9">9</td><td>Terraform state plaintext secrets</td><td>Enable S3 backend with encryption + DynamoDB locking</td><td><span class="badge badge-med">Medium</span></td><td><strong>2 — IMMEDIATE</strong></td></tr>
+  <tr><td>T05</td><td class="risk-6">6</td><td>No network policies between namespaces</td><td>Apply <code>k8s/overlays/prod/network-policy.yaml</code> + create for dev/staging</td><td><span class="badge badge-low">Low</span></td><td><strong>3 — THIS SPRINT</strong></td></tr>
+  <tr><td>T19</td><td class="risk-4">4</td><td>CloudWatch logs can be deleted</td><td>CloudTrail alarm on DeleteLogGroup events</td><td><span class="badge badge-low">Low</span></td><td>4</td></tr>
+  <tr><td>T20</td><td class="risk-4">4</td><td>K8s audit logs deletable</td><td>Ship logs to immutable S3 bucket with Object Lock</td><td><span class="badge badge-med">Medium</span></td><td>5</td></tr>
+  <tr><td>T24</td><td class="risk-3">3</td><td>DNS/ICMP exfiltration possible</td><td>Egress network policies, DNS filtering</td><td><span class="badge badge-med">Medium</span></td><td>6</td></tr>
+  <tr><td>T28</td><td class="risk-2">2</td><td>Masqueraded pods undetectable</td><td>OPA/Gatekeeper naming policy</td><td><span class="badge badge-high">High</span></td><td>7</td></tr>
+  <tr><td>T32</td><td class="risk-2">2</td><td>Sensitive data in metrics/logs</td><td>Metric/log scrubbing rules, PII filter</td><td><span class="badge badge-med">Medium</span></td><td>8</td></tr>
+</table>
+
+<h3>Partially Mitigated Threats</h3>
+<table>
+  <tr><th>Threat ID</th><th>Risk</th><th>Current Control</th><th>Gap</th><th>Recommended Enhancement</th><th>Effort</th></tr>
+  <tr><td>T03</td><td class="risk-6">6</td><td>K8s RBAC limits secret access</td><td>Secrets base64 not encrypted at rest</td><td>Enable K3s etcd encryption-at-rest (<code>--encryption-provider-config</code>)</td><td><span class="badge badge-med">Medium</span></td></tr>
+  <tr><td>T04</td><td class="risk-6">6</td><td>API key in K8s Secret</td><td>No key rotation, no usage alerting</td><td>External Secrets Operator + rotation policy + API spend alerts</td><td><span class="badge badge-high">High</span></td></tr>
+  <tr><td>T06</td><td class="risk-6">6</td><td>Resource limits, some non-root</td><td>No Pod Security Standards enforced</td><td>Apply PSS <code>restricted</code> profile to all namespaces</td><td><span class="badge badge-low">Low</span></td></tr>
+  <tr><td>T07</td><td class="risk-4">4</td><td>Password auth on Code Server</td><td>No MFA, no IP restriction</td><td>Add Traefik IP whitelist middleware</td><td><span class="badge badge-low">Low</span></td></tr>
+  <tr><td>T08</td><td class="risk-4">4</td><td>Token auth on Jupyter</td><td>No MFA, no IP restriction</td><td>Add Traefik IP whitelist middleware</td><td><span class="badge badge-low">Low</span></td></tr>
+  <tr><td>T09</td><td class="risk-4">4</td><td>Branch protection</td><td>PAT in remote URLs, no rotation</td><td>Use SSH keys, enforce PAT expiry</td><td><span class="badge badge-low">Low</span></td></tr>
+  <tr><td>T10</td><td class="risk-4">4</td><td>Dependabot updates Actions</td><td>Actions pinned to tags, not SHAs</td><td>Pin all Actions to commit SHAs</td><td><span class="badge badge-low">Low</span></td></tr>
+  <tr><td>T11</td><td class="risk-4">4</td><td>Branch protection on main</td><td>Workflow files can be modified in PR</td><td>Add <code>.github/workflows/*</code> to CODEOWNERS with strict review</td><td><span class="badge badge-low">Low</span></td></tr>
+  <tr><td>T17</td><td class="risk-4">4</td><td>Rate limiting (10 RPM)</td><td>No content inspection or logging</td><td>Log prompt sizes, alert on unusual patterns</td><td><span class="badge badge-med">Medium</span></td></tr>
+</table>
+
+<!-- Attack Tree Diagrams -->
+<div class="diagram">
+<div class="diagram-title">Attack Tree: T01 — K3s API Exploitation (Critical)</div>
+<svg viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;">
+  <defs><marker id="at" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#f85149"/></marker></defs>
+  <!-- Root -->
+  <rect x="230" y="10" width="240" height="40" rx="6" fill="rgba(248,81,73,0.15)" stroke="#f85149" stroke-width="2"/>
+  <text x="350" y="35" fill="#f85149" font-size="12" text-anchor="middle" font-weight="bold">Compromise K3s Cluster</text>
+  <!-- Level 1 -->
+  <rect x="40" y="80" width="180" height="35" rx="5" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="130" y="102" fill="#d29922" font-size="10" text-anchor="middle">Exploit API :6443 (open)</text>
+  <rect x="260" y="80" width="180" height="35" rx="5" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="350" y="102" fill="#d29922" font-size="10" text-anchor="middle">Exploit kubectl proxy :8001</text>
+  <rect x="480" y="80" width="180" height="35" rx="5" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="570" y="102" fill="#d29922" font-size="10" text-anchor="middle">Stolen kubeconfig (T1550)</text>
+  <line x1="350" y1="50" x2="130" y2="80" stroke="#f85149" stroke-width="1" marker-end="url(#at)"/>
+  <line x1="350" y1="50" x2="350" y2="80" stroke="#f85149" stroke-width="1" marker-end="url(#at)"/>
+  <line x1="350" y1="50" x2="570" y2="80" stroke="#f85149" stroke-width="1" marker-end="url(#at)"/>
+  <!-- Level 2 -->
+  <rect x="20" y="145" width="160" height="30" rx="4" fill="rgba(227,179,65,0.1)" stroke="#e3b341" stroke-width="1"/>
+  <text x="100" y="164" fill="#e3b341" font-size="9" text-anchor="middle">Deploy malicious pod</text>
+  <rect x="200" y="145" width="160" height="30" rx="4" fill="rgba(227,179,65,0.1)" stroke="#e3b341" stroke-width="1"/>
+  <text x="280" y="164" fill="#e3b341" font-size="9" text-anchor="middle">Read K8s Secrets</text>
+  <rect x="380" y="145" width="160" height="30" rx="4" fill="rgba(227,179,65,0.1)" stroke="#e3b341" stroke-width="1"/>
+  <text x="460" y="164" fill="#e3b341" font-size="9" text-anchor="middle">kubectl exec into pods</text>
+  <rect x="560" y="145" width="120" height="30" rx="4" fill="rgba(227,179,65,0.1)" stroke="#e3b341" stroke-width="1"/>
+  <text x="620" y="164" fill="#e3b341" font-size="9" text-anchor="middle">Delete namespaces</text>
+  <line x1="130" y1="115" x2="100" y2="145" stroke="#d29922" stroke-width="1"/>
+  <line x1="130" y1="115" x2="280" y2="145" stroke="#d29922" stroke-width="1"/>
+  <line x1="350" y1="115" x2="460" y2="145" stroke="#d29922" stroke-width="1"/>
+  <line x1="570" y1="115" x2="620" y2="145" stroke="#d29922" stroke-width="1"/>
+  <!-- Level 3: Impact -->
+  <rect x="20" y="205" width="160" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="100" y="224" fill="#f85149" font-size="9" text-anchor="middle">Cryptominer / backdoor</text>
+  <rect x="200" y="205" width="160" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="280" y="224" fill="#f85149" font-size="9" text-anchor="middle">Claude API key stolen</text>
+  <rect x="380" y="205" width="160" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="460" y="224" fill="#f85149" font-size="9" text-anchor="middle">Data exfiltration</text>
+  <rect x="560" y="205" width="120" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="620" y="224" fill="#f85149" font-size="9" text-anchor="middle">Full destruction</text>
+  <line x1="100" y1="175" x2="100" y2="205" stroke="#f85149" stroke-width="1"/>
+  <line x1="280" y1="175" x2="280" y2="205" stroke="#f85149" stroke-width="1"/>
+  <line x1="460" y1="175" x2="460" y2="205" stroke="#f85149" stroke-width="1"/>
+  <line x1="620" y1="175" x2="620" y2="205" stroke="#f85149" stroke-width="1"/>
+  <!-- Fix -->
+  <rect x="200" y="250" width="300" height="25" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="350" y="267" fill="#3fb950" font-size="10" text-anchor="middle" font-weight="bold">FIX: Restrict SG 6443/8001 to allowed_ssh_cidr (5 min)</text>
+</svg>
+</div>
+
+<div class="diagram">
+<div class="diagram-title">Attack Tree: T02 — Terraform State Secret Exposure (Critical)</div>
+<svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;">
+  <defs><marker id="at2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#f85149"/></marker></defs>
+  <rect x="210" y="10" width="280" height="40" rx="6" fill="rgba(248,81,73,0.15)" stroke="#f85149" stroke-width="2"/>
+  <text x="350" y="35" fill="#f85149" font-size="12" text-anchor="middle" font-weight="bold">Extract Secrets from Terraform State</text>
+  <rect x="40" y="80" width="200" height="35" rx="5" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="140" y="102" fill="#d29922" font-size="10" text-anchor="middle">Access local .tfstate file</text>
+  <rect x="260" y="80" width="200" height="35" rx="5" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="360" y="102" fill="#d29922" font-size="10" text-anchor="middle">Accidental git commit of state</text>
+  <rect x="480" y="80" width="180" height="35" rx="5" fill="rgba(210,153,34,0.1)" stroke="#d29922" stroke-width="1"/>
+  <text x="570" y="102" fill="#d29922" font-size="10" text-anchor="middle">Shared dev machine access</text>
+  <line x1="350" y1="50" x2="140" y2="80" stroke="#f85149" stroke-width="1" marker-end="url(#at2)"/>
+  <line x1="350" y1="50" x2="360" y2="80" stroke="#f85149" stroke-width="1" marker-end="url(#at2)"/>
+  <line x1="350" y1="50" x2="570" y2="80" stroke="#f85149" stroke-width="1" marker-end="url(#at2)"/>
+  <rect x="100" y="145" width="200" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="200" y="164" fill="#f85149" font-size="9" text-anchor="middle">IAM keys, VPC IDs, resource ARNs exposed</text>
+  <rect x="400" y="145" width="200" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="500" y="164" fill="#f85149" font-size="9" text-anchor="middle">Full infrastructure takeover</text>
+  <line x1="140" y1="115" x2="200" y2="145" stroke="#f85149" stroke-width="1"/>
+  <line x1="360" y1="115" x2="500" y2="145" stroke="#f85149" stroke-width="1"/>
+  <rect x="175" y="190" width="350" height="25" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="350" y="207" fill="#3fb950" font-size="10" text-anchor="middle" font-weight="bold">FIX: S3 backend + encryption + DynamoDB locking</text>
+</svg>
+</div>
+
+<div class="diagram">
+<div class="diagram-title">Attack Tree: T06 — Container Escape (High)</div>
+<svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;">
+  <defs><marker id="at3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#d29922"/></marker></defs>
+  <rect x="220" y="10" width="260" height="40" rx="6" fill="rgba(210,153,34,0.15)" stroke="#d29922" stroke-width="2"/>
+  <text x="350" y="35" fill="#d29922" font-size="12" text-anchor="middle" font-weight="bold">Container Escape to EC2 Host</text>
+  <rect x="40" y="80" width="200" height="35" rx="5" fill="rgba(227,179,65,0.1)" stroke="#e3b341" stroke-width="1"/>
+  <text x="140" y="102" fill="#e3b341" font-size="10" text-anchor="middle">Privileged container exploit</text>
+  <rect x="260" y="80" width="180" height="35" rx="5" fill="rgba(227,179,65,0.1)" stroke="#e3b341" stroke-width="1"/>
+  <text x="350" y="102" fill="#e3b341" font-size="10" text-anchor="middle">Kernel CVE (host shared)</text>
+  <rect x="460" y="80" width="200" height="35" rx="5" fill="rgba(227,179,65,0.1)" stroke="#e3b341" stroke-width="1"/>
+  <text x="560" y="102" fill="#e3b341" font-size="10" text-anchor="middle">Mount host filesystem</text>
+  <line x1="350" y1="50" x2="140" y2="80" stroke="#d29922" stroke-width="1" marker-end="url(#at3)"/>
+  <line x1="350" y1="50" x2="350" y2="80" stroke="#d29922" stroke-width="1" marker-end="url(#at3)"/>
+  <line x1="350" y1="50" x2="560" y2="80" stroke="#d29922" stroke-width="1" marker-end="url(#at3)"/>
+  <rect x="140" y="145" width="200" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="240" y="164" fill="#f85149" font-size="9" text-anchor="middle">Full EC2 host access (root)</text>
+  <rect x="380" y="145" width="240" height="30" rx="4" fill="rgba(248,81,73,0.1)" stroke="#f85149" stroke-width="1"/>
+  <text x="500" y="164" fill="#f85149" font-size="9" text-anchor="middle">Access all K3s data, kubeconfig, IAM role</text>
+  <line x1="140" y1="115" x2="240" y2="145" stroke="#f85149" stroke-width="1"/>
+  <line x1="560" y1="115" x2="500" y2="145" stroke="#f85149" stroke-width="1"/>
+  <rect x="175" y="190" width="350" height="25" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="350" y="207" fill="#3fb950" font-size="10" text-anchor="middle" font-weight="bold">FIX: Pod Security Standards (restricted profile)</text>
+</svg>
+</div>
+
+<!-- Coverage Radar Chart -->
+<div class="diagram">
+<div class="diagram-title">Security Domain Coverage (Maturity Assessment)</div>
+<svg viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:500px;">
+  <!-- Radar axes -->
+  <g transform="translate(250,200)">
+    <!-- Background rings -->
+    <circle cx="0" cy="0" r="150" fill="none" stroke="#30363d" stroke-width="0.5"/>
+    <circle cx="0" cy="0" r="100" fill="none" stroke="#30363d" stroke-width="0.5"/>
+    <circle cx="0" cy="0" r="50" fill="none" stroke="#30363d" stroke-width="0.5"/>
+    <!-- Ring labels -->
+    <text x="5" y="-152" fill="#8b949e" font-size="8">High</text>
+    <text x="5" y="-102" fill="#8b949e" font-size="8">Med</text>
+    <text x="5" y="-52" fill="#8b949e" font-size="8">Low</text>
+    <!-- 8 axes -->
+    <line x1="0" y1="0" x2="0" y2="-150" stroke="#30363d" stroke-width="0.5"/>
+    <line x1="0" y1="0" x2="106" y2="-106" stroke="#30363d" stroke-width="0.5"/>
+    <line x1="0" y1="0" x2="150" y2="0" stroke="#30363d" stroke-width="0.5"/>
+    <line x1="0" y1="0" x2="106" y2="106" stroke="#30363d" stroke-width="0.5"/>
+    <line x1="0" y1="0" x2="0" y2="150" stroke="#30363d" stroke-width="0.5"/>
+    <line x1="0" y1="0" x2="-106" y2="106" stroke="#30363d" stroke-width="0.5"/>
+    <line x1="0" y1="0" x2="-150" y2="0" stroke="#30363d" stroke-width="0.5"/>
+    <line x1="0" y1="0" x2="-106" y2="-106" stroke="#30363d" stroke-width="0.5"/>
+    <!-- Labels -->
+    <text x="0" y="-165" fill="#e6edf3" font-size="10" text-anchor="middle">Code Scanning</text>
+    <text x="125" y="-118" fill="#e6edf3" font-size="10" text-anchor="start">Secret Detection</text>
+    <text x="165" y="5" fill="#e6edf3" font-size="10" text-anchor="start">Container Sec</text>
+    <text x="125" y="125" fill="#e6edf3" font-size="10" text-anchor="start">Access Control</text>
+    <text x="0" y="175" fill="#e6edf3" font-size="10" text-anchor="middle">Network Sec</text>
+    <text x="-125" y="125" fill="#e6edf3" font-size="10" text-anchor="end">Runtime Sec</text>
+    <text x="-165" y="5" fill="#e6edf3" font-size="10" text-anchor="end">Logging/Audit</text>
+    <text x="-125" y="-118" fill="#e6edf3" font-size="10" text-anchor="end">Supply Chain</text>
+    <!-- Actual coverage polygon -->
+    <!-- Code:High(140), Secret:High(130), Container:High(120), Access:Med(90), Network:Low(30), Runtime:Low(40), Logging:Low(50), SupplyChain:Med(90) -->
+    <polygon points="0,-140 92,-92 120,0 64,64 0,30 -28,28 -50,0 -64,-64"
+      fill="rgba(57,210,192,0.15)" stroke="#39d2c0" stroke-width="2"/>
+    <!-- Data points -->
+    <circle cx="0" cy="-140" r="4" fill="#39d2c0"/>
+    <circle cx="92" cy="-92" r="4" fill="#39d2c0"/>
+    <circle cx="120" cy="0" r="4" fill="#39d2c0"/>
+    <circle cx="64" cy="64" r="4" fill="#39d2c0"/>
+    <circle cx="0" cy="30" r="4" fill="#f85149"/>
+    <circle cx="-28" cy="28" r="4" fill="#f85149"/>
+    <circle cx="-50" cy="0" r="4" fill="#d29922"/>
+    <circle cx="-64" cy="-64" r="4" fill="#d29922"/>
+  </g>
+  <!-- Legend -->
+  <text x="250" y="400" fill="#8b949e" font-size="10" text-anchor="middle">Red dots = critical gaps | Orange = partial | Cyan = strong coverage</text>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<!-- 7. RECOMMENDATIONS DASHBOARD -->
+<!-- ============================================================ -->
+<h2 id="recommendations">7. Recommendations Dashboard</h2>
+
+<h3>Summary</h3>
+<div class="grid-4">
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--accent-blue)">38</div>
+    <div class="stat-label">Total Threats</div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--accent-green)">9</div>
+    <div class="stat-label">Fully Mitigated</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:24%;background:var(--accent-green)"></div></div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--accent-orange)">17</div>
+    <div class="stat-label">Partially Mitigated</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:45%;background:var(--accent-orange)"></div></div>
+  </div>
+  <div class="card stat-card">
+    <div class="stat-num" style="color:var(--critical)">12</div>
+    <div class="stat-label">Unmitigated</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:31%;background:var(--critical)"></div></div>
+  </div>
+</div>
+
+<h3>Mitigation Coverage</h3>
+<div class="card">
+  <p><strong>Overall Coverage:</strong> 55% (fully + partially mitigated)</p>
+  <div class="progress-bar" style="height:16px;">
+    <div class="progress-fill" style="width:24%;background:var(--accent-green);display:inline-block;float:left;height:100%"></div>
+    <div class="progress-fill" style="width:31%;background:var(--accent-orange);display:inline-block;float:left;height:100%"></div>
+  </div>
+  <div class="legend" style="margin-top:0.5rem;">
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--accent-green)"></div> Mitigated (24%)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--accent-orange)"></div> Partial (31%)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--bg-code)"></div> Unmitigated (45%)</div>
+  </div>
+</div>
+
+<h3>Top 10 Action Items (Risk &times; Effort Priority)</h3>
+<table>
+  <tr><th>#</th><th>Action</th><th>Risk</th><th>Effort</th><th>Category</th><th>File to Change</th></tr>
+  <tr style="background:rgba(248,81,73,0.08)"><td>1</td><td><strong>Restrict SG ports 6443/8001 to allowed_ssh_cidr</strong></td><td><span class="badge badge-crit">9</span></td><td><span class="badge badge-low">Low</span></td><td>Quick Win</td><td><code>terraform/security-groups.tf</code></td></tr>
+  <tr style="background:rgba(248,81,73,0.08)"><td>2</td><td><strong>Enable Terraform S3 backend with encryption</strong></td><td><span class="badge badge-crit">9</span></td><td><span class="badge badge-med">Med</span></td><td>Quick Win</td><td><code>terraform/main.tf</code></td></tr>
+  <tr><td>3</td><td><strong>Apply network policies to all namespaces</strong></td><td><span class="badge badge-high">6</span></td><td><span class="badge badge-low">Low</span></td><td>Quick Win</td><td><code>k8s/overlays/*/network-policy.yaml</code></td></tr>
+  <tr><td>4</td><td><strong>Apply Pod Security Standards (restricted)</strong></td><td><span class="badge badge-high">6</span></td><td><span class="badge badge-low">Low</span></td><td>Quick Win</td><td>Namespace labels</td></tr>
+  <tr><td>5</td><td><strong>Pin GH Actions to commit SHAs</strong></td><td><span class="badge badge-med">4</span></td><td><span class="badge badge-low">Low</span></td><td>Quick Win</td><td><code>.github/workflows/*.yml</code></td></tr>
+  <tr><td>6</td><td><strong>Add IP whitelist to Traefik for dev tools</strong></td><td><span class="badge badge-med">4</span></td><td><span class="badge badge-low">Low</span></td><td>Quick Win</td><td>Traefik IngressRoute</td></tr>
+  <tr><td>7</td><td><strong>Add .github/workflows/ to CODEOWNERS</strong></td><td><span class="badge badge-med">4</span></td><td><span class="badge badge-low">Low</span></td><td>Quick Win</td><td><code>.github/CODEOWNERS</code></td></tr>
+  <tr><td>8</td><td><strong>Enable K3s etcd encryption-at-rest</strong></td><td><span class="badge badge-high">6</span></td><td><span class="badge badge-med">Med</span></td><td>Strategic</td><td>K3s server config</td></tr>
+  <tr><td>9</td><td><strong>Set up CloudTrail alarms for destructive ops</strong></td><td><span class="badge badge-med">4</span></td><td><span class="badge badge-med">Med</span></td><td>Strategic</td><td><code>terraform/</code> (new)</td></tr>
+  <tr><td>10</td><td><strong>External Secrets Operator + key rotation</strong></td><td><span class="badge badge-high">6</span></td><td><span class="badge badge-high">High</span></td><td>Strategic</td><td>Helm chart + config</td></tr>
+</table>
+
+<h3>Quick Wins (High Risk, Low Effort)</h3>
+<div class="card" style="border-color: var(--accent-green);">
+  <p>These 7 items can be completed in a single sprint and eliminate the two critical-risk threats:</p>
+  <ol>
+    <li><strong>T01 fix</strong> — Edit 2 lines in <code>security-groups.tf</code> to restrict K3s ports</li>
+    <li><strong>T05 fix</strong> — Apply existing <code>network-policy.yaml</code> file (already written)</li>
+    <li><strong>T06 fix</strong> — Add namespace labels for Pod Security Standards</li>
+    <li><strong>T10 fix</strong> — Pin Actions to SHAs (search-and-replace in workflow files)</li>
+    <li><strong>T07/T08 fix</strong> — Traefik middleware for IP whitelist on dev tools</li>
+    <li><strong>T11 fix</strong> — One line added to CODEOWNERS</li>
+    <li><strong>T09 fix</strong> — Enforce PAT expiry in GitHub settings</li>
+  </ol>
+</div>
+
+<h3>Strategic Improvements (High Risk, High Effort)</h3>
+<div class="card" style="border-color: var(--accent-orange);">
+  <ol>
+    <li><strong>T02 fix</strong> — Terraform S3 backend migration (requires S3 bucket + DynamoDB table + state migration)</li>
+    <li><strong>T03 fix</strong> — K3s etcd encryption-at-rest (requires cluster restart with new config)</li>
+    <li><strong>T04 fix</strong> — External Secrets Operator + Vault integration (E5 roadmap)</li>
+    <li><strong>Runtime security</strong> — Falco or similar for container runtime anomaly detection</li>
+    <li><strong>Admission control</strong> — OPA Gatekeeper for policy enforcement</li>
+  </ol>
+</div>
+
+<!-- FOOTER -->
+<hr style="border-color: var(--border); margin: 3rem 0 1rem;">
+<p style="color: var(--text-muted); font-size: 0.85rem;">
+  Robo Stack MITRE ATT&CK Threat Model v1.0 &middot; S3.7 Deliverable &middot; Issue #40<br>
+  Derived from S3.6 Architecture Document (#39)<br>
+  Framework: MITRE ATT&CK for Enterprise v14<br>
+  &copy; 2026 Yeti Knowledge Systems &middot; Overwatch
+</p>
+
+</div>
+</body>
+</html>
